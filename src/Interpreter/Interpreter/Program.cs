@@ -1,4 +1,5 @@
-﻿
+﻿using System.IO;
+
 namespace Interpreter
 {
     class Program
@@ -18,7 +19,7 @@ namespace Interpreter
 
             // check that input source code file exists
             string sourceFilePath = args[0];
-            if (!System.IO.File.Exists(sourceFilePath))
+            if (!File.Exists(sourceFilePath))
             {
                 System.Console.WriteLine("Invalid source file. File not found!\n");
                 return -1;
@@ -26,7 +27,11 @@ namespace Interpreter
 
             // create scanner and scan the input file
             Scanner scanner = new Scanner(sourceFilePath);
-           
+            if (scanner.Scan() == false)
+            {
+                return -1;
+            }
+            
 
             return 0;
         }
