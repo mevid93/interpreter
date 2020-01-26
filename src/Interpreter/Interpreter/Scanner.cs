@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Interpreter
 {
@@ -56,15 +57,77 @@ namespace Interpreter
         public List<Token> StringToTokens(string line)
         {
             List<Token> lineTokens = new List<Token>(); // list to contain extracted lines
-            string currentToken = string.Empty;         // characters for current token in process
-            bool isString = false;                      // if string --> there can be whitespaces
 
             // iterate though line and extract tokens
             for(int i = 0; i < line.Length; i++)
             {
                 char c = line[i];
-                          
 
+                // skip initial whitespaces
+                if (char.IsWhiteSpace(c))
+                {
+                    continue;
+                }
+
+                // single character tokens
+                char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';'};
+                if (singleCharTokens.Contains(c))
+                {
+                    // TODO!!!
+                    continue;
+                }
+
+                // :-character (two possible cases else error)
+                if(c == ':')
+                {
+                    // 1. assingment --> next character is =
+                    // TODO!!!
+                    // 2. type (int, string, bool)
+                    // TODO!!!
+                    // else error
+                    // TODO!!!
+                    continue;
+                }
+
+                if (c == '/')
+                {
+                    // if next char is / or *, then comment block --> keep reading till newline or */
+                    // TODO!!!
+                    // else div
+                    // TODO!!!
+                    continue;
+                }
+
+                if (c == '.')
+                {
+                    // read next character
+                    // if digit read additional digits and return number
+                    // TODO!!!
+                    // if was not digit... error
+                    // TODO!!!
+                    continue;
+                }
+
+                if (char.IsDigit(c))
+                {
+                    // read any additional digits and at most one descimal point and return number
+                    // TODO!!!
+                    continue;
+                }
+
+                if (char.IsLetter(c))
+                {
+                    // read any additional letters and digits
+                    // check if one of the reserwed keywords
+                    string[] keywords = {"var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
+                    // TODO!!!
+                    // else return ident
+                    // TODO!!!
+                    continue;
+                }
+
+                // else anounce an error
+                // TODO!!!
             }
 
             // all done... return extracted tokens
