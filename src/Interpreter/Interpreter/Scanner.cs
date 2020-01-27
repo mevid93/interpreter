@@ -82,7 +82,7 @@ namespace Interpreter
                 {
                     // 1. assingment --> next character is =
                     // TODO!!!
-                    // 2. type (int, string, bool)
+                    // 2. peak that next is type (int, string, bool)
                     // TODO!!!
                     // else error
                     // TODO!!!
@@ -98,19 +98,10 @@ namespace Interpreter
                     continue;
                 }
 
-                if (c == '.')
-                {
-                    // read next character
-                    // if digit read additional digits and return number
-                    // TODO!!!
-                    // if was not digit... error
-                    // TODO!!!
-                    continue;
-                }
 
                 if (char.IsDigit(c))
                 {
-                    // read any additional digits and at most one descimal point and return number
+                    // read any additional digits and return number
                     // TODO!!!
                     continue;
                 }
