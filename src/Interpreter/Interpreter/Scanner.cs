@@ -10,8 +10,11 @@ namespace Interpreter
     /// </summary>
     class Scanner
     {
-        private string sourceFilePath;
-        private List<Token> allTokens;
+        private string sourceFilePath;          // path to source code file
+        private List<Token> allTokens;          // list of all tokens extracted from source code file
+        private bool scanSuccessed;             // flag telling if scan was succesfull or not
+        private bool processingCommentblock;    // flag telling if processing multiline comment block /* */
+        private int currentLineNum;             // line of source code that is processed
 
         /// <summary>
         /// constructor for <c>Scanner</c> object.
@@ -21,6 +24,8 @@ namespace Interpreter
         {
             sourceFilePath = filepath;
             allTokens = new List<Token>();
+            scanSuccessed = true;
+            currentLineNum = 1;
         }
 
         /// <summary>
@@ -31,20 +36,20 @@ namespace Interpreter
         {
             try
             {
-                // convert each line in source file to tokens
-                // and add them to list of tokens
+                // read all lines from source files and find tokens from source code
                 foreach(string line in File.ReadLines(sourceFilePath))
                 {
                     List<Token> tmp = StringToTokens(line);
                     allTokens.AddRange(tmp);
+                    currentLineNum++;
                 }
                 // operation was succesfull
-                return true;
+                return scanSuccessed;
             }
             catch
             {
                 // error... file scanning was not succesful
-                System.Console.WriteLine("Failed to scan file!\n");
+                System.Console.WriteLine("IOError::Failed to scan file!\n");
                 return false;
             }
         }
@@ -56,12 +61,23 @@ namespace Interpreter
         /// <returns>list of tokens</returns>
         public List<Token> StringToTokens(string line)
         {
-            List<Token> lineTokens = new List<Token>(); // list to contain extracted lines
+            List<Token> lineTokens = new List<Token>(); // list holding extracted tokens
 
-            // iterate though line and extract tokens
+            // iterate through line and extract tokens
             for(int i = 0; i < line.Length; i++)
             {
                 char c = line[i];
+
+                // if processing comment block
+                if (processingCommentblock)
+                {
+                    if(c == '*' && i < line.Length - 1 && line[i + 1] == '/')
+                    {
+                        i++;
+                        processingCommentblock = false;
+                    }
+                    continue;
+                }
 
                 // skip initial whitespaces
                 if (char.IsWhiteSpace(c))
@@ -73,7 +89,7 @@ namespace Interpreter
                 char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';'};
                 if (singleCharTokens.Contains(c))
                 {
-                    // TODO!!!
+                    lineTokens.Add(new Token(c.ToString(), Token.FindTokenType(c.ToString())));
                     continue;
                 }
 
@@ -81,48 +97,105 @@ namespace Interpreter
                 if(c == ':')
                 {
                     // 1. assingment --> next character is =
-                    // TODO!!!
-                    // 2. peak that next is type (int, string, bool)
-                    // TODO!!!
-                    // else error
-                    // TODO!!!
+                    if (i < line.Length - 1 && line[i + 1] == '=')
+                    {
+                        i++;
+                        lineTokens.Add(new Token(":=", TokenType.ASSIGNMENT));
+                        continue;
+                    }
+                    // 2. else :
+                    lineTokens.Add(new Token(":", TokenType.SEPARATOR));
                     continue;
                 }
 
                 if (c == '/')
                 {
-                    // if next char is / or *, then comment block --> keep reading till newline or */
-                    // TODO!!!
+                    // if next char is / then comment block read next line
+                    if(i < line.Length - 1 && line[i + 1] == '/')
+                    {
+                        return lineTokens;
+                    }
+                    // if next char is */ then comment block read till next */
+                    if (i < line.Length - 1 && line[i + 1] == '*')
+                    {
+                        processingCommentblock = true;
+                        i++;
+                        continue;
+                    }
                     // else div
-                    // TODO!!!
+                    lineTokens.Add(new Token("/", TokenType.DIVIDE));
                     continue;
                 }
 
+                if (c == '.')
+                {
+                    // if next char is . then comment block read next line
+                    if (i < line.Length - 1 && line[i + 1] == '.')
+                    {
+                        lineTokens.Add(new Token("..", TokenType.RANGE));
+                    }
+                    // else error
+                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid usage of .!\n");
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    // keep scanning until next " if line ends before ", then error
+                    // TODO
+                }
 
                 if (char.IsDigit(c))
                 {
                     // read any additional digits and return number
-                    // TODO!!!
+                    string number = "";
+                    while(i < line.Length && char.IsDigit(line[i]))
+                    {
+                        number += line[i];
+                        i++;
+                    }
+                    lineTokens.Add(new Token(number, TokenType.VAL_INTEGER));
                     continue;
                 }
 
-                if (char.IsLetter(c))
+                if (IsAlphabet(c))
                 {
                     // read any additional letters and digits
+                    string letters = "";
+                    while(char.IsDigit(line[i]) || IsAlphabet(line[i]))
+                    {
+                        letters += line[i];
+                        i++;
+                    }
                     // check if one of the reserwed keywords
                     string[] keywords = {"var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
-                    // TODO!!!
+                    if(keywords.Contains(letters))
+                    {
+                        lineTokens.Add(new Token(letters, Token.FindTokenType(letters)));
+                        continue;
+                    }
                     // else return ident
-                    // TODO!!!
+                    lineTokens.Add(new Token(letters, TokenType.IDENTIFIER));
                     continue;
                 }
 
                 // else anounce an error
-                // TODO!!!
+                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::General syntax error!\n");
+                scanSuccessed = false;
             }
 
             // all done... return extracted tokens
             return lineTokens;
+        }
+
+        /// <summary>
+        /// method <c>IsAlphabet</c> for checking if character is alphabet character (a-z, A-Z).
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns>true if character is alphabet character</returns>
+        private bool IsAlphabet(char c)
+        {
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
         }
 
         /// <summary>
@@ -133,6 +206,19 @@ namespace Interpreter
         public List<Token> GetScannedTokens()
         {
             return allTokens;
+        }
+
+        /// <summary>
+        /// method <c>PrintScannedTokens</c> for printing scanned tokens.
+        /// used only for debugging.
+        /// </summary>
+        public void PrintScannedTokens()
+        {
+            System.Console.WriteLine("Scanned Tokens\n");
+            foreach(Token token in allTokens)
+            {
+                System.Console.WriteLine(token.GetTokenValue() + " " + token.GetTokenType());
+            }
         }
 
     }
