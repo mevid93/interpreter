@@ -99,6 +99,8 @@ namespace Interpreter
                     return TokenType.NOT;
                 case ";":
                     return TokenType.STATEMENT_END;
+                case "=":
+                    return TokenType.EQUALS;
                 case ":=":
                     return TokenType.ASSIGNMENT;
                 case "var":

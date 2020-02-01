@@ -86,7 +86,7 @@ namespace Interpreter
                 }
 
                 // single character tokens
-                char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';'};
+                char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';', '='};
                 if (singleCharTokens.Contains(c))
                 {
                     lineTokens.Add(new Token(c.ToString(), Token.FindTokenType(c.ToString())));
@@ -133,25 +133,48 @@ namespace Interpreter
                     if (i < line.Length - 1 && line[i + 1] == '.')
                     {
                         lineTokens.Add(new Token("..", TokenType.RANGE));
+                        i++;
+                        continue;
                     }
                     // else error
-                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid usage of .!\n");
+                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid usage of .!");
+                    scanSuccessed = false;
                     continue;
                 }
 
                 if (c == '"')
                 {
+                    string value = "";
+                    bool ended = false;
+                    int col = i;
+                    i++;
                     // keep scanning until next " if line ends before ", then error
-                    // TODO
+                    while(i < line.Length)
+                    {
+                        if(line[i] == '"')
+                        {
+                            ended = true;
+                            break;
+                        }
+                        value += line[i];
+                        i++;
+                    }
+                    if (ended)
+                    {
+                        lineTokens.Add(new Token(value, TokenType.VAL_STRING));
+                        continue;
+                    }
+                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {col}::Invalid usage of \"");
+                    scanSuccessed = false;
                 }
 
                 if (char.IsDigit(c))
                 {
                     // read any additional digits and return number
-                    string number = "";
-                    while(i < line.Length && char.IsDigit(line[i]))
+                    string number = "" + c;
+                    while(i + 1 < line.Length && char.IsDigit(line[i + 1]))
                     {
-                        number += line[i];
+                        number += line[i + 1];
                         i++;
                     }
                     lineTokens.Add(new Token(number, TokenType.VAL_INTEGER));
@@ -161,10 +184,10 @@ namespace Interpreter
                 if (IsAlphabet(c))
                 {
                     // read any additional letters and digits
-                    string letters = "";
-                    while(char.IsDigit(line[i]) || IsAlphabet(line[i]))
+                    string letters = "" + c;
+                    while(char.IsDigit(line[i + 1]) || IsAlphabet(line[i + 1]))
                     {
-                        letters += line[i];
+                        letters += line[i + 1];
                         i++;
                     }
                     // check if one of the reserwed keywords
@@ -180,7 +203,7 @@ namespace Interpreter
                 }
 
                 // else anounce an error
-                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::General syntax error!\n");
+                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::General syntax error!");
                 scanSuccessed = false;
             }
 
@@ -214,10 +237,9 @@ namespace Interpreter
         /// </summary>
         public void PrintScannedTokens()
         {
-            System.Console.WriteLine("Scanned Tokens\n");
             foreach(Token token in allTokens)
             {
-                System.Console.WriteLine(token.GetTokenValue() + " " + token.GetTokenType());
+                System.Console.WriteLine(token.GetTokenType() + ": " + token.GetTokenValue());
             }
         }
 

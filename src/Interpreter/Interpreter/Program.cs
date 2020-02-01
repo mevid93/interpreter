@@ -13,29 +13,28 @@ namespace Interpreter
             // user must provide path to source code file as input parameter
             if (args.Length != 0)
             {
-                System.Console.WriteLine("Please provide path to Mini-PL source file.\n");
+                System.Console.WriteLine($"IOError::Please provide path to Mini-PL source file!");
                 return -1;
             }
 
             // check that input source code file exists
-            //string sourceFilePath = args[0];
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code2.txt";
+            string sourceFilePath = args[0];
             if (!File.Exists(sourceFilePath))
             {
-                System.Console.WriteLine("Invalid source file. File not found!\n");
+                System.Console.WriteLine($"IOError::Invalid source file. File not found!");
                 return -1;
             }
 
             // create scanner and scan the input file
             Scanner scanner = new Scanner(sourceFilePath);
-            if (scanner.Scan() == false)
+            if (!scanner.Scan())
             {
-                scanner.PrintScannedTokens();
                 return -1;
             }
-            scanner.PrintScannedTokens();
 
             // Parser
+
+            // Semantic analysis
 
             // Interpreter
 
