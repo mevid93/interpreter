@@ -18,13 +18,14 @@ namespace Interpreter
             }
 
             // check that input source code file exists
-            string sourceFilePath = args[0];
+            //string sourceFilePath = args[0];
+            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
             if (!File.Exists(sourceFilePath))
             {
                 System.Console.WriteLine($"IOError::Invalid source file. File not found!");
                 return -1;
             }
-
+            
             // create scanner and scan the input file
             Scanner scanner = new Scanner(sourceFilePath);
             if (!scanner.Scan())
@@ -32,7 +33,10 @@ namespace Interpreter
                 return -1;
             }
 
-            // Parser
+            // create parser, do syntax analys and build AST
+            Parser parser = new Parser(scanner.GetScannedTokens());
+
+
 
             // Semantic analysis
 

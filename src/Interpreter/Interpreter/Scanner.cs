@@ -89,7 +89,7 @@ namespace Interpreter
                 char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';', '='};
                 if (singleCharTokens.Contains(c))
                 {
-                    lineTokens.Add(new Token(c.ToString(), Token.FindTokenType(c.ToString())));
+                    lineTokens.Add(new Token(c.ToString(), Token.FindTokenType(c.ToString()), currentLineNum, i));
                     continue;
                 }
 
@@ -99,12 +99,12 @@ namespace Interpreter
                     // 1. assingment --> next character is =
                     if (i < line.Length - 1 && line[i + 1] == '=')
                     {
+                        lineTokens.Add(new Token(":=", TokenType.ASSIGNMENT, currentLineNum, i));
                         i++;
-                        lineTokens.Add(new Token(":=", TokenType.ASSIGNMENT));
                         continue;
                     }
                     // 2. else :
-                    lineTokens.Add(new Token(":", TokenType.SEPARATOR));
+                    lineTokens.Add(new Token(":", TokenType.SEPARATOR, currentLineNum, i));
                     continue;
                 }
 
@@ -123,7 +123,7 @@ namespace Interpreter
                         continue;
                     }
                     // else div
-                    lineTokens.Add(new Token("/", TokenType.DIVIDE));
+                    lineTokens.Add(new Token("/", TokenType.DIVIDE, currentLineNum, i));
                     continue;
                 }
 
@@ -132,7 +132,7 @@ namespace Interpreter
                     // if next char is . then comment block read next line
                     if (i < line.Length - 1 && line[i + 1] == '.')
                     {
-                        lineTokens.Add(new Token("..", TokenType.RANGE));
+                        lineTokens.Add(new Token("..", TokenType.RANGE, currentLineNum, i));
                         i++;
                         continue;
                     }
@@ -161,14 +161,14 @@ namespace Interpreter
                     }
                     if (ended)
                     {
-                        lineTokens.Add(new Token(value, TokenType.VAL_STRING));
+                        lineTokens.Add(new Token(value, TokenType.VAL_STRING, currentLineNum, i));
                         continue;
                     }
                     System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {col}::Invalid usage of \"");
                     scanSuccessed = false;
                 }
 
-                if (char.IsDigit(c))
+                if (char.IsDigit(c) && c != '0')
                 {
                     // read any additional digits and return number
                     string number = "" + c;
@@ -177,7 +177,7 @@ namespace Interpreter
                         number += line[i + 1];
                         i++;
                     }
-                    lineTokens.Add(new Token(number, TokenType.VAL_INTEGER));
+                    lineTokens.Add(new Token(number, TokenType.VAL_INTEGER, currentLineNum, i));
                     continue;
                 }
 
@@ -194,16 +194,16 @@ namespace Interpreter
                     string[] keywords = {"var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
                     if(keywords.Contains(letters))
                     {
-                        lineTokens.Add(new Token(letters, Token.FindTokenType(letters)));
+                        lineTokens.Add(new Token(letters, Token.FindTokenType(letters), currentLineNum, i));
                         continue;
                     }
                     // else return ident
-                    lineTokens.Add(new Token(letters, TokenType.IDENTIFIER));
+                    lineTokens.Add(new Token(letters, TokenType.IDENTIFIER, currentLineNum, i));
                     continue;
                 }
 
                 // else anounce an error
-                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::General syntax error!");
+                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid token detected!");
                 scanSuccessed = false;
             }
 
@@ -239,7 +239,7 @@ namespace Interpreter
         {
             foreach(Token token in allTokens)
             {
-                System.Console.WriteLine(token.GetTokenType() + ": " + token.GetTokenValue());
+                System.Console.WriteLine(token.ToString());
             }
         }
 

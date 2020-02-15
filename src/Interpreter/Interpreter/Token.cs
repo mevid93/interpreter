@@ -46,14 +46,18 @@ namespace Interpreter
     {
         private TokenType type; // type of token
         private string value;   // value of token
+        private int line;       // line where token exists in source code
+        private int column;     // column where token starts in source code
 
         /// <summary>
         /// constructor <c>Token</c> for creating Token object.
         /// </summary>
-        public Token(string tokenValue, TokenType tokenType)
+        public Token(string tokenValue, TokenType tokenType, int lineNum, int columnNum)
         {
             type = tokenType;
             value = tokenValue;
+            line = lineNum;
+            column = columnNum;
         }
 
         /// <summary>
@@ -72,6 +76,34 @@ namespace Interpreter
         public string GetTokenValue()
         {
             return value;
+        }
+
+        /// <summary>
+        /// method <c>GetLine</c> returns the line number where token is in source code.
+        /// </summary>
+        /// <returns>line number</returns>
+        public int GetLine()
+        {
+            return line;
+        }
+
+        /// <summary>
+        /// method <c>GetColumn</c> returns the column number where tokens starts in source code.
+        /// </summary>
+        /// <returns>column number</returns>
+        public int GetColumn()
+        {
+            return column;
+        }
+
+        /// <summary>
+        /// method <c>ToString</c> returns string representation of Token-object.
+        /// </summary>
+        /// <returns></returns>
+        override
+        public string ToString()
+        {
+            return $"{type}, {value}, Row: {line}, Col: {column}";
         }
 
         /// <summary>
