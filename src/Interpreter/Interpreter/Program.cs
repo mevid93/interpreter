@@ -19,7 +19,7 @@ namespace Interpreter
 
             // check that input source code file exists
             //string sourceFilePath = args[0];
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
+            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code3.txt";
             if (!File.Exists(sourceFilePath))
             {
                 System.Console.WriteLine($"IOError::Invalid source file. File not found!");
@@ -31,7 +31,9 @@ namespace Interpreter
 
             // create parser for syntax analysis
             Parser parser = new Parser(scanner);
-
+            
+            // do the syntax analysis and create AST
+            parser.Parse();
 
 
             // Semantic analysis
