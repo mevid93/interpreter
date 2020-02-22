@@ -12,6 +12,7 @@ namespace Interpreter
         ASSIGNMENT,
         CLOSE_PARENTHIS,
         DIVIDE,
+        EOF,
         EQUALS,
         ERROR,
         IDENTIFIER,
@@ -52,12 +53,12 @@ namespace Interpreter
         /// <summary>
         /// constructor <c>Token</c> for creating Token object.
         /// </summary>
-        public Token(string tokenValue, TokenType tokenType, int lineNum, int columnNum)
+        public Token(string tokenValue, TokenType tokenType, int row, int col)
         {
             type = tokenType;
             value = tokenValue;
-            line = lineNum;
-            column = columnNum;
+            line = row;
+            column = col;
         }
 
         /// <summary>
@@ -79,10 +80,10 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetLine</c> returns the line number where token is in source code.
+        /// method <c>GetRow</c> returns the row number where token is in source code.
         /// </summary>
         /// <returns>line number</returns>
-        public int GetLine()
+        public int GetRow()
         {
             return line;
         }

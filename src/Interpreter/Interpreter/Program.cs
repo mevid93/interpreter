@@ -26,15 +26,11 @@ namespace Interpreter
                 return -1;
             }
             
-            // create scanner and scan the input file
+            // create scanner for lexical analysis
             Scanner scanner = new Scanner(sourceFilePath);
-            if (!scanner.Scan())
-            {
-                return -1;
-            }
 
-            // create parser, do syntax analys and build AST
-            Parser parser = new Parser(scanner.GetScannedTokens());
+            // create parser for syntax analysis
+            Parser parser = new Parser(scanner);
 
 
 

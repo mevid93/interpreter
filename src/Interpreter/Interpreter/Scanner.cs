@@ -11,10 +11,10 @@ namespace Interpreter
     class Scanner
     {
         private string sourceFilePath;          // path to source code file
-        private List<Token> allTokens;          // list of all tokens extracted from source code file
-        private bool scanSuccessed;             // flag telling if scan was succesfull or not
         private bool processingCommentblock;    // flag telling if processing multiline comment block /* */
-        private int currentLineNum;             // line of source code that is processed
+        private int rowNum;                     // row of source code that is processed
+        private int colNum;                     // column of source code that is processed
+        private string[] lines;                 // source code lines
 
         /// <summary>
         /// constructor for <c>Scanner</c> object.
@@ -23,192 +23,203 @@ namespace Interpreter
         public Scanner(string filepath)
         {
             sourceFilePath = filepath;
-            allTokens = new List<Token>();
-            scanSuccessed = true;
-            currentLineNum = 1;
+            processingCommentblock = false;
+            rowNum = 0;
+            colNum = 0;
+            lines = File.ReadAllLines(filepath);
         }
 
         /// <summary>
-        /// method <c>Scan</c> for scanning file contents.
+        /// method <c>Scan</c> for scanning next token from input source code.
         /// </summary>
-        /// <returns>true if scan was succesfull</returns>
-        public bool Scan()
+        /// <returns>next token</returns>
+        public Token ScanNextToken()
         {
-            try
-            {
-                // read all lines from source files and find tokens from source code
-                foreach(string line in File.ReadLines(sourceFilePath))
-                {
-                    List<Token> tmp = StringToTokens(line);
-                    allTokens.AddRange(tmp);
-                    currentLineNum++;
-                }
-                // operation was succesfull
-                return scanSuccessed;
-            }
-            catch
-            {
-                // error... file scanning was not succesful
-                System.Console.WriteLine("IOError::Failed to scan file!\n");
-                return false;
-            }
+            Token token = ExtractNextToken(false);
+            return token;
         }
 
         /// <summary>
-        /// method <c>StringToTokens</c> for extracting tokens from string
+        /// method <c>PeekNextToken</c> peeks the next token from input source code.
         /// </summary>
-        /// <param name="line">string from which tokens will be extracted</param>
-        /// <returns>list of tokens</returns>
-        public List<Token> StringToTokens(string line)
+        /// <returns></returns>
+        public Token PeekNextToken()
         {
-            List<Token> lineTokens = new List<Token>(); // list holding extracted tokens
+            Token token = ExtractNextToken(true);
+            return token;
+        }
 
-            // iterate through line and extract tokens
-            for(int i = 0; i < line.Length; i++)
+        /// <summary>
+        /// method <c>ExtractNextToken</c> scans the next token from input source code.
+        /// parameter isPeek tells if we want to update current position in the source code
+        /// at the end of the scan or not. In case isPeek is false, then the position is updated.
+        /// </summary>
+        /// <param name="isPeek">false if the current position in the source code should not be updated</param>
+        /// <returns>scanned token</returns>
+        private Token ExtractNextToken(bool isPeek)
+        {
+            // temporary variables in case the row and col numbers should not be updated
+            int tmpRow = rowNum;
+            int tmpCol = colNum;
+            string error;
+
+            // go through the lines   
+            for (int r = tmpRow; r < lines.Length; r++)
             {
-                char c = line[i];
+                string line = lines[r];
 
-                // if processing comment block
-                if (processingCommentblock)
+                // go through the columns
+                for (int c = tmpCol; c < line.Length; c++)
                 {
-                    if(c == '*' && i < line.Length - 1 && line[i + 1] == '/')
+                    // check if currently processing comment block
+                    // then we have to check if there is end of comment block
+                    if (processingCommentblock)
                     {
-                        i++;
-                        processingCommentblock = false;
-                    }
-                    continue;
-                }
-
-                // skip initial whitespaces
-                if (char.IsWhiteSpace(c))
-                {
-                    continue;
-                }
-
-                // single character tokens
-                char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';', '='};
-                if (singleCharTokens.Contains(c))
-                {
-                    lineTokens.Add(new Token(c.ToString(), Token.FindTokenType(c.ToString()), currentLineNum, i));
-                    continue;
-                }
-
-                // :-character (two possible cases else error)
-                if(c == ':')
-                {
-                    // 1. assingment --> next character is =
-                    if (i < line.Length - 1 && line[i + 1] == '=')
-                    {
-                        lineTokens.Add(new Token(":=", TokenType.ASSIGNMENT, currentLineNum, i));
-                        i++;
-                        continue;
-                    }
-                    // 2. else :
-                    lineTokens.Add(new Token(":", TokenType.SEPARATOR, currentLineNum, i));
-                    continue;
-                }
-
-                if (c == '/')
-                {
-                    // if next char is / then comment block read next line
-                    if(i < line.Length - 1 && line[i + 1] == '/')
-                    {
-                        return lineTokens;
-                    }
-                    // if next char is */ then comment block read till next */
-                    if (i < line.Length - 1 && line[i + 1] == '*')
-                    {
-                        processingCommentblock = true;
-                        i++;
-                        continue;
-                    }
-                    // else div
-                    lineTokens.Add(new Token("/", TokenType.DIVIDE, currentLineNum, i));
-                    continue;
-                }
-
-                if (c == '.')
-                {
-                    // if next char is . then comment block read next line
-                    if (i < line.Length - 1 && line[i + 1] == '.')
-                    {
-                        lineTokens.Add(new Token("..", TokenType.RANGE, currentLineNum, i));
-                        i++;
-                        continue;
-                    }
-                    // else error
-                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid usage of .!");
-                    scanSuccessed = false;
-                    continue;
-                }
-
-                if (c == '"')
-                {
-                    string value = "";
-                    bool ended = false;
-                    int col = i;
-                    i++;
-                    // keep scanning until next " if line ends before ", then error
-                    while(i < line.Length)
-                    {
-                        if(line[i] == '"')
+                        if (line[c] == '*' && c < line.Length - 1 && line[c + 1] == '/')
                         {
-                            ended = true;
-                            break;
+                            c++;
+                            processingCommentblock = false;
                         }
-                        value += line[i];
-                        i++;
-                    }
-                    if (ended)
-                    {
-                        lineTokens.Add(new Token(value, TokenType.VAL_STRING, currentLineNum, i));
                         continue;
                     }
-                    System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {col}::Invalid usage of \"");
-                    scanSuccessed = false;
+
+                    // check if the next character is whitespace
+                    // if it is, then continue to next character
+                    // skip initial whitespaces
+                    if (char.IsWhiteSpace(line[c])) continue;
+
+                    // check if next character is single characer token
+                    // if it is, return that single character token
+                    char[] singleCharTokens = { '(', ')', '+', '-', '*', '<', '&', '!', ';', '=' };
+                    if (singleCharTokens.Contains(line[c]))
+                    {
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        return new Token(line[c].ToString(), Token.FindTokenType(line[c].ToString()), r, c);
+                    }
+
+                    // check if the character is :
+                    // if it is, there are two possible cases
+                    if (line[c] == ':')
+                    {
+                        if (c < line.Length - 1 && line[c + 1] == '=')
+                        {
+                            HandleRowAndColUpdate(r, c + 2, !isPeek);
+                            return new Token(":=", TokenType.ASSIGNMENT, r, c);
+                        }
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        return new Token(":", TokenType.SEPARATOR, r, c);
+                    }
+
+                    // check if character is /
+                    // if it is, there are three possible valid options
+                    // comment for the rest of the line, start of comment block or division
+                    if (line[c] == '/')
+                    {
+                        if (line[c] < line.Length - 1 && line[c + 1] == '/') break;
+                        if (line[c] < line.Length - 1 && line[c + 1] == '*')
+                        {
+                            processingCommentblock = true;
+                            c++;
+                            continue;
+                        }
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        return new Token("/", TokenType.DIVIDE, r, c);
+                    }
+
+                    // check if character is .
+                    // if it is, there is only one valid option, else it is error
+                    if (line[c] == '.')
+                    {
+                        if (c < line.Length - 1 && line[c + 1] == '.')
+                        {
+                            HandleRowAndColUpdate(r, c + 2, !isPeek);
+                            return new Token("..", TokenType.RANGE, r, c);
+                        }
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        error = $"LexicalError::Row {r}::Column {c + 1}::Expected '.'";
+                        System.Console.WriteLine(error);
+                        return new Token(error, TokenType.ERROR, r, c);
+                    }
+
+                    // check if character is "
+                    // if it is, we are working with string and need to keep scanning until it ends
+                    if (line[c] == '"')
+                    {
+                        string value = "";
+                        bool ended = false;
+                        c++;
+                        while (c < line.Length)
+                        {
+                            if (line[c] == '"')
+                            {
+                                ended = true;
+                                break;
+                            }
+                            if(line[c] == '\\' && c < line.Length && line[c + 1] == 'n')
+                            {
+                                c++;
+                                value += "\n";
+                            }
+                            else
+                            {
+                                value += line[c];
+                            }
+                            c++;
+                        }
+                        if (ended)
+                        {
+                            HandleRowAndColUpdate(r, c + 1, !isPeek);
+                            return new Token(value, TokenType.VAL_STRING, r, c);
+                        }
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        error = $"LexicalError::Row {r}::Column {c}::Expected '\"'";
+                        System.Console.WriteLine(error);
+                        return new Token(error, TokenType.ERROR, r, c);
+                    }
+
+                    // check if character is digit
+                    // if it is, read any additional digits and return number
+                    if (char.IsDigit(line[c]))
+                    {
+                        string number = "" + line[c];
+                        while (c + 1 < line.Length && char.IsDigit(line[c + 1]))
+                        {
+                            number += line[c + 1];
+                            c++;
+                        }
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        return new Token(number, TokenType.VAL_INTEGER, r, c);
+                    }
+
+                    // check if next character is alphabet
+                    // if it is, read any additional letters and digits
+                    if (IsAlphabet(line[c]))
+                    {
+                        string letters = "" + line[c];
+                        while (char.IsDigit(line[c + 1]) || IsAlphabet(line[c + 1]))
+                        {
+                            letters += line[c + 1];
+                            c++;
+                        }
+                        string[] keywords = { "var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
+                        HandleRowAndColUpdate(r, c + 1, !isPeek);
+                        if (keywords.Contains(letters)) return new Token(letters, Token.FindTokenType(letters), r, c);
+                        return new Token(letters, TokenType.IDENTIFIER, r, c);
+                    }
+
+                    // if ended here, if means that we were not able to scan the content into valid token
+                    error = $"LexicalError::Row {r}::Column {c}::Illegal character!";
+                    System.Console.WriteLine(error);
+                    HandleRowAndColUpdate(r, c + 1, !isPeek);
+                    return new Token(error, TokenType.ERROR, r, c);
                 }
 
-                if (char.IsDigit(c) && c != '0')
-                {
-                    // read any additional digits and return number
-                    string number = "" + c;
-                    while(i + 1 < line.Length && char.IsDigit(line[i + 1]))
-                    {
-                        number += line[i + 1];
-                        i++;
-                    }
-                    lineTokens.Add(new Token(number, TokenType.VAL_INTEGER, currentLineNum, i));
-                    continue;
-                }
-
-                if (IsAlphabet(c))
-                {
-                    // read any additional letters and digits
-                    string letters = "" + c;
-                    while(char.IsDigit(line[i + 1]) || IsAlphabet(line[i + 1]))
-                    {
-                        letters += line[i + 1];
-                        i++;
-                    }
-                    // check if one of the reserwed keywords
-                    string[] keywords = {"var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
-                    if(keywords.Contains(letters))
-                    {
-                        lineTokens.Add(new Token(letters, Token.FindTokenType(letters), currentLineNum, i));
-                        continue;
-                    }
-                    // else return ident
-                    lineTokens.Add(new Token(letters, TokenType.IDENTIFIER, currentLineNum, i));
-                    continue;
-                }
-
-                // else anounce an error
-                System.Console.WriteLine($"SyntaxError::Line {currentLineNum}::Column {i}::Invalid token detected!");
-                scanSuccessed = false;
+                // new line --> reset column 
+                tmpCol = 0;
             }
 
-            // all done... return extracted tokens
-            return lineTokens;
+            // if ended here, it means that all rows have allready been scanner --> end of file
+            return new Token("EOF", TokenType.EOF, rowNum, colNum);
         }
 
         /// <summary>
@@ -222,24 +233,15 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetScannedTokens</c> for returning list of tokens
-        /// that were scanned from the input source code file.
+        /// method <c>HandleRowAndColUpdate</c> updates row and column number if the third
+        /// boolean paramter is true.
         /// </summary>
-        /// <returns>list of tokens</returns>
-        public List<Token> GetScannedTokens()
+        private void HandleRowAndColUpdate(int row, int col, bool update)
         {
-            return allTokens;
-        }
-
-        /// <summary>
-        /// method <c>PrintScannedTokens</c> for printing scanned tokens.
-        /// used only for debugging.
-        /// </summary>
-        public void PrintScannedTokens()
-        {
-            foreach(Token token in allTokens)
+            if (update)
             {
-                System.Console.WriteLine(token.ToString());
+                rowNum = row;
+                colNum = col;
             }
         }
 

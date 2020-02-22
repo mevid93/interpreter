@@ -11,16 +11,15 @@ namespace Interpreter
     class Parser
     {
 
-        private List<Token> tokens;     // list of tokens that scanner was able to extract
-        private bool errorsDetected;    // flag that tells if errors were detected
+        private Scanner scanner;
 
         /// <summary>
         /// constructor <c>Parser</c> creates new Parser-object.
         /// </summary>
-        /// <param name="scannedTokens">list of scanned tokens</param>
-        public Parser(List<Token> scannedTokens)
+        /// <param name="tokenScanner">scanner-object</param>
+        public Parser(Scanner tokenScanner)
         {
-            tokens = scannedTokens;
+            scanner = tokenScanner;
         }
 
         
