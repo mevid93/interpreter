@@ -19,7 +19,7 @@ namespace Interpreter
 
             // check that input source code file exists
             //string sourceFilePath = args[0];
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code3.txt";
+            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
             if (!File.Exists(sourceFilePath))
             {
                 System.Console.WriteLine($"IOError::Invalid source file. File not found!");

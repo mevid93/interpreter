@@ -1,6 +1,4 @@
-﻿
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System;
 
 namespace Interpreter
@@ -8,7 +6,7 @@ namespace Interpreter
     /// <summary>
     /// class <c>Parser</c> performs the syntax analysis for source code.
     /// Parser also constructs the AST.
-    /// Does top-down parsing by using LL(1) algorithm.
+    /// TOP-DOWN parsing by using LL(1).
     /// </summary>
     class Parser
     {
@@ -40,10 +38,17 @@ namespace Interpreter
         /// are encountered, then the rest of the statement is skipped and the parses
         /// continues from the next statement. If EOF, then the parser stops.
         /// </summary>
-        private void HandleError(string errorMsg)
+        private void HandleError()
         {
-            Console.WriteLine(inputToken.ToString());
-            Console.WriteLine(errorMsg);
+            // define different error types
+            string defaultError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!";
+            string eofError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Unexpected end of file!";
+            // print error to user
+            if (inputToken.GetTokenType() == TokenType.ERROR) Console.WriteLine(inputToken.GetTokenValue());
+            else if (inputToken.GetTokenType() == TokenType.EOF) Console.WriteLine(eofError);
+            else Console.WriteLine(defaultError);
+            // try to move forward and get the next end of statement token
+            inputToken = scanner.ScanNextToken();
         }
 
         /// <summary>
@@ -51,10 +56,8 @@ namespace Interpreter
         /// </summary>
         private void Match(TokenType expected)
         {
-            if (inputToken.GetTokenType() == expected)
-            {
-                inputToken = scanner.ScanNextToken();
-            }
+            if (inputToken.GetTokenType() == expected) inputToken = scanner.ScanNextToken();
+            else HandleError();
         }
 
         /// <summary>
@@ -76,7 +79,7 @@ namespace Interpreter
             }
             else
             {
-                HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                HandleError();
             }
         }
 
@@ -101,7 +104,7 @@ namespace Interpreter
                 case TokenType.KEYWORD_END:
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
         }
@@ -162,7 +165,7 @@ namespace Interpreter
                     Match(TokenType.STATEMENT_END);
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
         }
@@ -172,29 +175,24 @@ namespace Interpreter
         /// </summary>
         private void ProcedureType()
         {
-            switch (inputToken.GetTokenType())
-            {
-                case TokenType.TYPE_INT:
-                    Match(TokenType.TYPE_INT);
-                    break;
-                case TokenType.TYPE_STRING:
-                    Match(TokenType.TYPE_STRING);
-                    break;
-                case TokenType.TYPE_BOOL:
-                    Match(TokenType.TYPE_BOOL);
-                    break;
-                default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
-                    break;
-            }
+            if (inputToken.GetTokenType() == TokenType.TYPE_INT) Match(TokenType.TYPE_INT);
+            else if (inputToken.GetTokenType() == TokenType.TYPE_STRING) Match(TokenType.TYPE_STRING);
+            else if (inputToken.GetTokenType() == TokenType.TYPE_BOOL) Match(TokenType.TYPE_BOOL);
+            else HandleError();
         }
+
+        /* ###############################################################################################
+         * presedence and order or evaluation is explained in the following page:
+         * https://docs.microsoft.com/en-us/cpp/c-language/precedence-and-order-of-evaluation?view=vs-2019
+         * ###############################################################################################
+         */
 
         /// <summary>
         /// method <c>ProcedureExpression</c> handles the expression processing.
-        /// https://www.craftinginterpreters.com/parsing-expressions.html
         /// </summary>
         private void ProcedureExpression()
         {
+            Console.WriteLine("Expression");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -206,13 +204,16 @@ namespace Interpreter
                     ProcedureLogicalAndTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
+            Console.WriteLine("Exit Expression");
         }
 
-
-        public void ProcedureLogicalAnd()
+        /// <summary>
+        /// method <c>ProcedureLogicalAnd</c> handles the logical AND processing.
+        /// </summary>
+        private void ProcedureLogicalAnd()
         {
             Console.WriteLine("LogicalAnd");
             switch (inputToken.GetTokenType())
@@ -226,14 +227,16 @@ namespace Interpreter
                     ProcedureEqualityTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit LogicalAnd");
         }
 
-
-        public void ProcedureLogicalAndTail()
+        /// <summary>
+        /// method <c>ProcedureLogicalAndTail</c> handles the end processing of logical AND.
+        /// </summary>
+        private void ProcedureLogicalAndTail()
         {
             Console.WriteLine("LogicalAndTail");
             switch (inputToken.GetTokenType())
@@ -256,13 +259,16 @@ namespace Interpreter
                     Console.WriteLine("Exit LogicalTail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit LogicalAndTail");
         }
 
-        public void ProcedureEquality()
+        /// <summary>
+        /// method <c>ProcedureEquality</c> handles the processing of equality comparison.
+        /// </summary>
+        private void ProcedureEquality()
         {
             Console.WriteLine("Equality");
             switch (inputToken.GetTokenType())
@@ -276,12 +282,16 @@ namespace Interpreter
                     ProcedureComparisonTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
+            Console.WriteLine("Exit Equality");
         }
 
-        public void ProcedureEqualityTail()
+        /// <summary>
+        /// method <c>ProduceEqualityTail</c> handles the end processing of equality comparison.
+        /// </summary>
+        private void ProcedureEqualityTail()
         {
             Console.WriteLine("Equality Tail");
             switch (inputToken.GetTokenType())
@@ -305,13 +315,16 @@ namespace Interpreter
                     Console.WriteLine("Exit Equality Tail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit Equality Tail");
         }
 
-        public void ProcedureComparison()
+        /// <summary>
+        /// method <c>ProcedureComparison</c> handles the processing of comparison operations (less than).
+        /// </summary>
+        private void ProcedureComparison()
         {
             Console.WriteLine("Comparison");
             switch (inputToken.GetTokenType())
@@ -325,12 +338,16 @@ namespace Interpreter
                     ProcedureTermTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
+            Console.WriteLine("Exit Comparison");
         }
 
-        public void ProcedureComparisonTail()
+        /// <summary>
+        /// method <c>ProcedureComparisonTail</c> handles the end processing of comparison operations.
+        /// </summary>
+        private void ProcedureComparisonTail()
         {
             Console.WriteLine("ComparisonTail");
             switch (inputToken.GetTokenType())
@@ -355,13 +372,16 @@ namespace Interpreter
                     Console.WriteLine("Exit ComparisonTail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit ComparisonTail");
         }
 
-        public void ProcedureTerm()
+        /// <summary>
+        /// method <c>ProduceTerm</c> handles the processing of addivite (+, -) operations.
+        /// </summary>
+        private void ProcedureTerm()
         {
             Console.WriteLine("Term");
             switch (inputToken.GetTokenType())
@@ -375,13 +395,16 @@ namespace Interpreter
                     ProcedureFactorTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit Term");
         }
 
-        public void ProcedureTermTail()
+        /// <summary>
+        /// method <c>ProduceTermTail</c> handles the end processing of additive (+, -) operations.
+        /// </summary>
+        private void ProcedureTermTail()
         {
             Console.WriteLine("TermTail");
             switch (inputToken.GetTokenType())
@@ -412,16 +435,16 @@ namespace Interpreter
                     Console.WriteLine("Exit TermTail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit TermTail");
         }
 
         /// <summary>
-        /// method <c>ProcedureFactor</c> handles multiplication processing.
+        /// method <c>ProcedureFactor</c> handles the processing of multiplicative (*, /) operations.
         /// </summary>
-        public void ProcedureFactor()
+        private void ProcedureFactor()
         {
             Console.WriteLine("Factor");
             switch (inputToken.GetTokenType())
@@ -435,16 +458,16 @@ namespace Interpreter
                     ProcedureUnaryTail();
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit Factor");
         }
 
         /// <summary>
-        /// method <c>ProcedureFactorTail</c> handles multiplication processing.
+        /// method <c>ProcedureFactorTail</c> handles the end processing of multiplicative operations.
         /// </summary>
-        public void ProcedureFactorTail()
+        private void ProcedureFactorTail()
         {
             Console.WriteLine("FactorTail");
             switch (inputToken.GetTokenType())
@@ -470,18 +493,19 @@ namespace Interpreter
                 case TokenType.EQUALS:
                 case TokenType.LESS_THAN:
                 case TokenType.AND:
+                    Console.WriteLine("Exit FactorTail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit FactorTail");
         }
 
         /// <summary>
-        /// method <c>ProcedureUnary</c> handles unary processing.
+        /// method <c>ProcedureUnary</c> handles the processing of unary opearations.
         /// </summary>
-        public void ProcedureUnary()
+        private void ProcedureUnary()
         {
             Console.WriteLine("Unary");
             switch (inputToken.GetTokenType())
@@ -496,16 +520,16 @@ namespace Interpreter
                     Match(TokenType.NOT);
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit Unary");
         }
 
         /// <summary>
-        /// method <c>ProcedureUnaryTail</c> handles unary tail processing.
+        /// method <c>ProcedureUnaryTail</c> handles the end processing of unary operations.
         /// </summary>
-        public void ProcedureUnaryTail()
+        private void ProcedureUnaryTail()
         {
             Console.WriteLine("UnaryTail");
             switch (inputToken.GetTokenType())
@@ -535,18 +559,18 @@ namespace Interpreter
                     Console.WriteLine("Exit UnaryTail");
                     return;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
             Console.WriteLine("Exit UnaryTail");
         }
 
         /// <summary>
-        /// method <c>ProcedurePrimary</c> handlers primary processing.
+        /// method <c>ProcedurePrimary</c> handles the preccing of primary elements.
         /// </summary>
         public void ProcedurePrimary()
         {
-            Console.WriteLine("UnaryTail");
+            Console.WriteLine("Primary");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -564,10 +588,10 @@ namespace Interpreter
                     Match(TokenType.CLOSE_PARENTHIS);
                     break;
                 default:
-                    HandleError($"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!");
+                    HandleError();
                     break;
             }
-            Console.WriteLine("Exit UnaryTail");
+            Console.WriteLine("Exit Primary");
         }
     }
 }
