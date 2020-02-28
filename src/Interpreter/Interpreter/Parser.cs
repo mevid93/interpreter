@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace Interpreter
 {
@@ -11,8 +12,10 @@ namespace Interpreter
     class Parser
     {
 
-        private Scanner scanner;    // scanner object
-        private Token inputToken;   // current token in input
+        private Scanner scanner;        // scanner object
+        private Token inputToken;       // current token in input
+        private List<Node> statements;  // abstract syntax tree
+        private bool errorsDetected;    // flag telling if errors were detected during parsing
 
         /// <summary>
         /// constructor <c>Parser</c> creates new Parser-object.
@@ -21,6 +24,17 @@ namespace Interpreter
         public Parser(Scanner tokenScanner)
         {
             scanner = tokenScanner;
+            statements = new List<Node>();
+            errorsDetected = false;
+        }
+
+        /// <summary>
+        /// method <c>NoErrorsDetected</c> returns the result of parsing.
+        /// </summary>
+        /// <returns></returns>
+        public bool NoErrorsDetected()
+        {
+            return !errorsDetected;
         }
 
         /// <summary>
@@ -28,9 +42,10 @@ namespace Interpreter
         /// Returns the AST if parsing was succesfull. If erros were encountered,
         /// then null is returned.
         /// </summary>
-        public void Parse()
+        public List<Node> Parse()
         {
             ProcedureProgram();
+            return statements;
         }
 
         /// <summary>
@@ -49,15 +64,28 @@ namespace Interpreter
             else Console.WriteLine(defaultError);
             // try to move forward and get the next end of statement token
             inputToken = scanner.ScanNextToken();
+            // update status of parsing --> set error flag to true
+            errorsDetected = true;
         }
 
         /// <summary>
         /// method <c>Match</c> consumes token from input stream if it matches the expected.
+        /// Returns the matched token value.
         /// </summary>
-        private void Match(TokenType expected)
+        private string Match(TokenType expected)
         {
-            if (inputToken.GetTokenType() == expected) inputToken = scanner.ScanNextToken();
-            else HandleError();
+            Console.WriteLine(inputToken.ToString());
+            if (inputToken.GetTokenType() == expected)
+            {
+                string value = inputToken.GetTokenValue();
+                inputToken = scanner.ScanNextToken();
+                return value;
+            }
+            else
+            {
+                HandleError();
+                return null;
+            }
         }
 
         /// <summary>
@@ -66,133 +94,133 @@ namespace Interpreter
         private void ProcedureProgram()
         {
             inputToken = scanner.ScanNextToken();
-            TokenType[] validTokenTypes = {
-                TokenType.KEYWORD_VAR,
-                TokenType.KEYWORD_PRINT,
-                TokenType.KEYWORD_ASSERT,
-                TokenType.EOF
-            };
-            if (validTokenTypes.Contains(inputToken.GetTokenType()))
+            while (inputToken.GetTokenType() != TokenType.EOF)
             {
-                ProcedureStatementList();
-                Match(TokenType.EOF);
-            }
-            else
-            {
-                HandleError();
-            }
-        }
-
-        /// <summary>
-        /// method <c>ProcedureStatementList</c> handles the statementlist processing.
-        /// </summary>
-        private void ProcedureStatementList()
-        {
-            switch (inputToken.GetTokenType())
-            {
-                case TokenType.KEYWORD_VAR:
-                case TokenType.IDENTIFIER:
-                case TokenType.KEYWORD_FOR:
-                case TokenType.KEYWORD_READ:
-                case TokenType.KEYWORD_PRINT:
-                case TokenType.KEYWORD_ASSERT:
-                    ProcedureStatement();
-                    ProcedureStatementList();
-                    break;
-                case TokenType.EOF:
-                case TokenType.ERROR:
-                case TokenType.KEYWORD_END:
-                    return;
-                default:
-                    HandleError();
-                    break;
+                // while not the end of the file --> process statement
+                Node node = ProcedureStatement();
+                // if valid statement --> add statement to AST
+                if (node != null)
+                {
+                    statements.Add(node);
+                    node.PrintInformation();
+                }
             }
         }
 
         /// <summary>
         /// method <c>ProcedureStatement</c> handles the statement processing.
         /// </summary>
-        private void ProcedureStatement()
+        private Node ProcedureStatement()
         {
             switch (inputToken.GetTokenType())
             {
+                // variable declaration or initialization
                 case TokenType.KEYWORD_VAR:
                     Match(TokenType.KEYWORD_VAR);
-                    Match(TokenType.IDENTIFIER);
-                    Match(TokenType.SEPARATOR);
-                    ProcedureType();
-                    if(inputToken.GetTokenType() == TokenType.ASSIGNMENT)
+                    string id = Match(TokenType.IDENTIFIER);
+                    string symbol = Match(TokenType.SEPARATOR);
+                    string type = ProcedureType();
+                    Node lhs = new VariableNode(id, type);
+                    Node rhs = null;
+                    Node node = new ExpressionNode(NodeType.INIT, symbol, lhs, rhs);
+                    if (inputToken.GetTokenType() == TokenType.ASSIGNMENT)
                     {
                         Match(TokenType.ASSIGNMENT);
-                        ProcedureExpression();
+                        rhs = ProcedureExpression();
+                        node = new ExpressionNode(NodeType.INIT, symbol, lhs, rhs);
                     }
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return node;
+
+                // variable assignment
                 case TokenType.IDENTIFIER:
-                    Match(TokenType.IDENTIFIER);
-                    Match(TokenType.ASSIGNMENT);
-                    ProcedureExpression();
+                    id = Match(TokenType.IDENTIFIER);
+                    symbol = Match(TokenType.ASSIGNMENT);
+                    lhs = new VariableNode(id, null);
+                    rhs = ProcedureExpression();
+                    node = new ExpressionNode(NodeType.ASSIGN, symbol, lhs, rhs);
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return node;
+
+                // for loop
                 case TokenType.KEYWORD_FOR:
-                    Match(TokenType.KEYWORD_FOR);
-                    Match(TokenType.IDENTIFIER);
+                    symbol = Match(TokenType.KEYWORD_FOR);
+                    id = Match(TokenType.IDENTIFIER);
                     Match(TokenType.KEYWORD_IN);
-                    ProcedureExpression();
+                    Node start = ProcedureExpression();
                     Match(TokenType.RANGE);
-                    ProcedureExpression();
+                    Node end = ProcedureExpression();
                     Match(TokenType.KEYWORD_DO);
-                    ProcedureStatementList();
+                    Node variable = new VariableNode(id, null);
+                    ForloopNode forNode = new ForloopNode(symbol, variable, start, end);
+                    while(inputToken.GetTokenType() != TokenType.EOF && inputToken.GetTokenType() != TokenType.KEYWORD_END)
+                    {
+                        Node stmnt = ProcedureStatement();
+                        if (stmnt != null) forNode.AddStatement(stmnt);
+                    }
                     Match(TokenType.KEYWORD_END);
                     Match(TokenType.KEYWORD_FOR);
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return forNode;
+                
+                // reading input from user into variable
                 case TokenType.KEYWORD_READ:
-                    Match(TokenType.KEYWORD_READ);
-                    Match(TokenType.IDENTIFIER);
+                    symbol = Match(TokenType.KEYWORD_READ);
+                    id = Match(TokenType.IDENTIFIER);
+                    Node parameter = new VariableNode(id, null);
+                    node = new FunctionNode(symbol, parameter);
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return node;
+
+                // printing into console for user
                 case TokenType.KEYWORD_PRINT:
-                    Match(TokenType.KEYWORD_PRINT);
-                    ProcedureExpression();
+                    symbol = Match(TokenType.KEYWORD_PRINT);
+                    parameter = ProcedureExpression();
+                    node = new FunctionNode(symbol, parameter);
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return node;
+                
+                // assert statement
                 case TokenType.KEYWORD_ASSERT:
-                    Match(TokenType.KEYWORD_ASSERT);
+                    symbol = Match(TokenType.KEYWORD_ASSERT);
                     Match(TokenType.OPEN_PARENTHIS);
-                    ProcedureExpression();
+                    parameter = ProcedureExpression();
+                    node = new FunctionNode(symbol, parameter);
                     Match(TokenType.CLOSE_PARENTHIS);
                     Match(TokenType.STATEMENT_END);
-                    break;
+                    return node;
+
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
         }
 
         /// <summary>
         /// method <c>ProcedureType</c> handles the type processing.
         /// </summary>
-        private void ProcedureType()
+        private string ProcedureType()
         {
-            if (inputToken.GetTokenType() == TokenType.TYPE_INT) Match(TokenType.TYPE_INT);
-            else if (inputToken.GetTokenType() == TokenType.TYPE_STRING) Match(TokenType.TYPE_STRING);
-            else if (inputToken.GetTokenType() == TokenType.TYPE_BOOL) Match(TokenType.TYPE_BOOL);
-            else HandleError();
+            switch (inputToken.GetTokenType())
+            {
+                case TokenType.TYPE_INT:
+                    return Match(TokenType.TYPE_INT);
+                case TokenType.TYPE_STRING:
+                    return Match(TokenType.TYPE_STRING);
+                case TokenType.TYPE_BOOL:
+                    return Match(TokenType.TYPE_BOOL);
+                default:
+                    HandleError();
+                    return null;
+            }
         }
 
-        /* ###############################################################################################
-         * presedence and order or evaluation is explained in the following page:
-         * https://docs.microsoft.com/en-us/cpp/c-language/precedence-and-order-of-evaluation?view=vs-2019
-         * ###############################################################################################
-         */
 
         /// <summary>
         /// method <c>ProcedureExpression</c> handles the expression processing.
         /// </summary>
-        private void ProcedureExpression()
+        private Node ProcedureExpression()
         {
-            Console.WriteLine("Expression");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -200,22 +228,20 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureLogicalAnd();
-                    ProcedureLogicalAndTail();
-                    break;
+                    Node expression = ProcedureLogicalAnd();
+                    expression = ProcedureLogicalAndTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Expression");
         }
 
         /// <summary>
         /// method <c>ProcedureLogicalAnd</c> handles the logical AND processing.
         /// </summary>
-        private void ProcedureLogicalAnd()
+        private Node ProcedureLogicalAnd()
         {
-            Console.WriteLine("LogicalAnd");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -223,29 +249,28 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureEquality();
-                    ProcedureEqualityTail();
-                    break;
+                    Node expression = ProcedureEquality();
+                    expression = ProcedureEqualityTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit LogicalAnd");
         }
 
         /// <summary>
         /// method <c>ProcedureLogicalAndTail</c> handles the end processing of logical AND.
         /// </summary>
-        private void ProcedureLogicalAndTail()
+        private Node ProcedureLogicalAndTail(Node lhs)
         {
-            Console.WriteLine("LogicalAndTail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.AND:
-                    Match(TokenType.AND);
-                    ProcedureEquality();
-                    ProcedureEqualityTail();
-                    break;
+                    string symbol = Match(TokenType.AND);
+                    Node rhs = ProcedureEquality();
+                    rhs = ProcedureEqualityTail(rhs);
+                    Node node = new ExpressionNode(NodeType.LOGICAL_AND, symbol, lhs, rhs);
+                    return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
@@ -256,21 +281,18 @@ namespace Interpreter
                 case TokenType.KEYWORD_DO:
                 case TokenType.KEYWORD_END:
                 case TokenType.CLOSE_PARENTHIS:
-                    Console.WriteLine("Exit LogicalTail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit LogicalAndTail");
         }
 
         /// <summary>
         /// method <c>ProcedureEquality</c> handles the processing of equality comparison.
         /// </summary>
-        private void ProcedureEquality()
+        private Node ProcedureEquality()
         {
-            Console.WriteLine("Equality");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -278,29 +300,28 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureComparison();
-                    ProcedureComparisonTail();
-                    break;
+                    Node expression = ProcedureComparison();
+                    expression = ProcedureComparisonTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Equality");
         }
 
         /// <summary>
         /// method <c>ProduceEqualityTail</c> handles the end processing of equality comparison.
         /// </summary>
-        private void ProcedureEqualityTail()
+        private Node ProcedureEqualityTail(Node lhs)
         {
-            Console.WriteLine("Equality Tail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.EQUALS:
-                    Match(TokenType.EQUALS);
-                    ProcedureComparison();
-                    ProcedureComparisonTail();
-                    break;
+                    string symbol = Match(TokenType.EQUALS);
+                    Node rhs = ProcedureComparison();
+                    rhs = ProcedureComparisonTail(rhs);
+                    Node node = new ExpressionNode(NodeType.EQUALITY, symbol, lhs, rhs);
+                    return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
@@ -312,21 +333,18 @@ namespace Interpreter
                 case TokenType.KEYWORD_END:
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.AND:
-                    Console.WriteLine("Exit Equality Tail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Equality Tail");
         }
 
         /// <summary>
         /// method <c>ProcedureComparison</c> handles the processing of comparison operations (less than).
         /// </summary>
-        private void ProcedureComparison()
+        private Node ProcedureComparison()
         {
-            Console.WriteLine("Comparison");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -334,29 +352,28 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureTerm();
-                    ProcedureTermTail();
-                    break;
+                    Node expression = ProcedureTerm();
+                    expression = ProcedureTermTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Comparison");
         }
 
         /// <summary>
         /// method <c>ProcedureComparisonTail</c> handles the end processing of comparison operations.
         /// </summary>
-        private void ProcedureComparisonTail()
+        private Node ProcedureComparisonTail(Node lhs)
         {
-            Console.WriteLine("ComparisonTail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.LESS_THAN:
-                    Match(TokenType.LESS_THAN);
-                    ProcedureTerm();
-                    ProcedureTermTail();
-                    break;
+                    string symbol = Match(TokenType.LESS_THAN);
+                    Node rhs = ProcedureTerm();
+                    rhs = ProcedureTermTail(rhs);
+                    Node node = new ExpressionNode(NodeType.LESS_THAN, symbol, lhs, rhs);
+                    return node;
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.IDENTIFIER:
                 case TokenType.KEYWORD_READ:
@@ -369,21 +386,18 @@ namespace Interpreter
                 case TokenType.KEYWORD_END:
                 case TokenType.EQUALS:
                 case TokenType.AND:
-                    Console.WriteLine("Exit ComparisonTail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit ComparisonTail");
         }
 
         /// <summary>
         /// method <c>ProduceTerm</c> handles the processing of addivite (+, -) operations.
         /// </summary>
-        private void ProcedureTerm()
+        private Node ProcedureTerm()
         {
-            Console.WriteLine("Term");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -391,34 +405,34 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureFactor();
-                    ProcedureFactorTail();
-                    break;
+                    Node expression = ProcedureFactor();
+                    expression = ProcedureFactorTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Term");
         }
 
         /// <summary>
         /// method <c>ProduceTermTail</c> handles the end processing of additive (+, -) operations.
         /// </summary>
-        private void ProcedureTermTail()
+        private Node ProcedureTermTail(Node lhs)
         {
-            Console.WriteLine("TermTail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.ADD:
-                    Match(TokenType.ADD);
-                    ProcedureFactor();
-                    ProcedureFactorTail();
-                    break;
+                    string symbol = Match(TokenType.ADD);
+                    Node rhs = ProcedureFactor();
+                    rhs = ProcedureFactorTail(rhs);
+                    Node node = new ExpressionNode(NodeType.ADD, symbol, lhs, rhs);
+                    return node;
                 case TokenType.MINUS:
-                    Match(TokenType.MINUS);
-                    ProcedureFactor();
-                    ProcedureFactorTail();
-                    break;
+                    symbol = Match(TokenType.MINUS);
+                    rhs = ProcedureFactor();
+                    rhs = ProcedureFactorTail(rhs);
+                    node = new ExpressionNode(NodeType.MINUS, symbol, lhs, rhs);
+                    return node;
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.IDENTIFIER:
                 case TokenType.KEYWORD_READ:
@@ -432,21 +446,18 @@ namespace Interpreter
                 case TokenType.EQUALS:
                 case TokenType.LESS_THAN:
                 case TokenType.AND:
-                    Console.WriteLine("Exit TermTail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit TermTail");
         }
 
         /// <summary>
         /// method <c>ProcedureFactor</c> handles the processing of multiplicative (*, /) operations.
         /// </summary>
-        private void ProcedureFactor()
+        private Node ProcedureFactor()
         {
-            Console.WriteLine("Factor");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
@@ -454,30 +465,29 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    ProcedureUnary();
-                    ProcedureUnaryTail();
-                    break;
+                    Node expression = ProcedureUnary();
+                    expression = ProcedureUnaryTail(expression);
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Factor");
         }
 
         /// <summary>
         /// method <c>ProcedureFactorTail</c> handles the end processing of multiplicative operations.
         /// </summary>
-        private void ProcedureFactorTail()
+        private Node ProcedureFactorTail(Node lhs)
         {
-            Console.WriteLine("FactorTail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.DIVIDE:
                 case TokenType.MULTIPLY:
-                    Match(TokenType.MULTIPLY);
-                    ProcedureFactor();
-                    ProcedureFactorTail();
-                    break;
+                    string symbol = Match(TokenType.MULTIPLY);
+                    Node rhs = ProcedureFactor();
+                    rhs = ProcedureFactorTail(rhs);
+                    Node node = new ExpressionNode(NodeType.MULTIPLY, symbol, lhs, rhs);
+                    return node;
                 case TokenType.ADD:
                 case TokenType.MINUS:
                 case TokenType.IDENTIFIER:
@@ -493,55 +503,53 @@ namespace Interpreter
                 case TokenType.EQUALS:
                 case TokenType.LESS_THAN:
                 case TokenType.AND:
-                    Console.WriteLine("Exit FactorTail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit FactorTail");
         }
 
         /// <summary>
         /// method <c>ProcedureUnary</c> handles the processing of unary opearations.
         /// </summary>
-        private void ProcedureUnary()
+        private Node ProcedureUnary()
         {
-            Console.WriteLine("Unary");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
-                    ProcedurePrimary();
-                    break;
+                    Node expression = ProcedurePrimary();
+                    return expression;
                 case TokenType.NOT:
-                    Match(TokenType.NOT);
-                    break;
+                    return null;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Unary");
         }
 
         /// <summary>
         /// method <c>ProcedureUnaryTail</c> handles the end processing of unary operations.
         /// </summary>
-        private void ProcedureUnaryTail()
+        private Node ProcedureUnaryTail(Node lhs)
         {
-            Console.WriteLine("UnaryTail");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
+                    Node expression = ProcedureUnary();
+                    expression = ProcedureUnaryTail(expression);
+                    return expression;
                 case TokenType.NOT:
-                    ProcedureUnary();
-                    ProcedureUnaryTail();
-                    break;
+                    string symbol = Match(TokenType.NOT);
+                    Node child = ProcedureUnaryTail(lhs);
+                    NotNode node = new NotNode(symbol, child);
+                    return node;
                 case TokenType.ADD:
                 case TokenType.MINUS:
                 case TokenType.CLOSE_PARENTHIS:
@@ -556,42 +564,38 @@ namespace Interpreter
                 case TokenType.KEYWORD_END:
                 case TokenType.EQUALS:
                 case TokenType.AND:
-                    Console.WriteLine("Exit UnaryTail");
-                    return;
+                    return lhs;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit UnaryTail");
         }
 
         /// <summary>
-        /// method <c>ProcedurePrimary</c> handles the preccing of primary elements.
+        /// method <c>ProcedurePrimary</c> handles the processing of primary elements.
         /// </summary>
-        public void ProcedurePrimary()
+        public Node ProcedurePrimary()
         {
-            Console.WriteLine("Primary");
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
-                    Match(TokenType.IDENTIFIER);
-                    break;
+                    string symbol = Match(TokenType.IDENTIFIER);
+                    return new VariableNode(symbol, null);
                 case TokenType.VAL_INTEGER:
-                    Match(TokenType.VAL_INTEGER);
-                    break;
+                    symbol = Match(TokenType.VAL_INTEGER);
+                    return new IntegerNode(symbol);
                 case TokenType.VAL_STRING:
-                    Match(TokenType.VAL_STRING);
-                    break;
+                    symbol = Match(TokenType.VAL_STRING);
+                    return new StringNode(symbol);
                 case TokenType.OPEN_PARENTHIS:
                     Match(TokenType.OPEN_PARENTHIS);
-                    ProcedureExpression();
+                    Node expression = ProcedureExpression();
                     Match(TokenType.CLOSE_PARENTHIS);
-                    break;
+                    return expression;
                 default:
                     HandleError();
-                    break;
+                    return null;
             }
-            Console.WriteLine("Exit Primary");
         }
     }
 }
