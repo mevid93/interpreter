@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Interpreter
@@ -16,6 +15,7 @@ namespace Interpreter
         private Token inputToken;       // current token in input
         private List<Node> statements;  // abstract syntax tree
         private bool errorsDetected;    // flag telling if errors were detected during parsing
+        private string lastError;       // last error which was printed --> prevents duplicate prints
 
         /// <summary>
         /// constructor <c>Parser</c> creates new Parser-object.
@@ -59,11 +59,36 @@ namespace Interpreter
             string defaultError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!";
             string eofError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Unexpected end of file!";
             // print error to user
-            if (inputToken.GetTokenType() == TokenType.ERROR) Console.WriteLine(inputToken.GetTokenValue());
-            else if (inputToken.GetTokenType() == TokenType.EOF) Console.WriteLine(eofError);
-            else Console.WriteLine(defaultError);
-            // try to move forward and get the next end of statement token
+            if (inputToken.GetTokenType() == TokenType.ERROR)
+            {
+                if (lastError == null || lastError != inputToken.GetTokenValue())
+                {
+                    Console.WriteLine(inputToken.GetTokenValue());
+                    lastError = inputToken.GetTokenValue();
+                }
+            }
+            else if (inputToken.GetTokenType() == TokenType.EOF)
+            {
+                if(lastError == null || lastError != eofError)
+                {
+                    Console.WriteLine(eofError);
+                    lastError = eofError;
+                }
+            }
+            else
+            {
+                if(lastError == null || lastError != defaultError)
+                {
+                    Console.WriteLine(defaultError);
+                    lastError = defaultError;
+                }
+            }
+            // try to move to the end of invalid statement (or the end of file)
             inputToken = scanner.ScanNextToken();
+            while (inputToken.GetTokenType() != TokenType.STATEMENT_END && inputToken.GetTokenType() != TokenType.EOF)
+            {
+                inputToken = scanner.ScanNextToken();
+            }
             // update status of parsing --> set error flag to true
             errorsDetected = true;
         }
@@ -74,7 +99,6 @@ namespace Interpreter
         /// </summary>
         private string Match(TokenType expected)
         {
-            Console.WriteLine(inputToken.ToString());
             if (inputToken.GetTokenType() == expected)
             {
                 string value = inputToken.GetTokenValue();
@@ -99,11 +123,7 @@ namespace Interpreter
                 // while not the end of the file --> process statement
                 Node node = ProcedureStatement();
                 // if valid statement --> add statement to AST
-                if (node != null)
-                {
-                    statements.Add(node);
-                    node.PrintInformation();
-                }
+                if (node != null) statements.Add(node);
             }
         }
 
@@ -214,7 +234,6 @@ namespace Interpreter
                     return null;
             }
         }
-
 
         /// <summary>
         /// method <c>ProcedureExpression</c> handles the expression processing.
@@ -574,7 +593,7 @@ namespace Interpreter
         /// <summary>
         /// method <c>ProcedurePrimary</c> handles the processing of primary elements.
         /// </summary>
-        public Node ProcedurePrimary()
+        private Node ProcedurePrimary()
         {
             switch (inputToken.GetTokenType())
             {

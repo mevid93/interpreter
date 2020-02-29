@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System;
 
 namespace Interpreter
 {
@@ -10,35 +12,43 @@ namespace Interpreter
         /// <param name="args">input parameters (source code file)</param>
         static int Main(string[] args)
         {
-            // user must provide path to source code file as input parameter
+            // User must provide path to source code file as input parameter
             if (args.Length != 0)
             {
-                System.Console.WriteLine($"IOError::Please provide path to Mini-PL source file!");
+                Console.WriteLine($"IOError::Please provide path to Mini-PL source file!");
+                Console.WriteLine("Expected command is: <program.exe> <sourcecode.txt>");
                 return -1;
             }
 
-            // check that input source code file exists
-            //string sourceFilePath = args[0];
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
+            // Check that input source code file exists
+            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";    // temp dev solution for testing
             if (!File.Exists(sourceFilePath))
             {
-                System.Console.WriteLine($"IOError::Invalid source file. File not found!");
+                Console.WriteLine($"IOError::Invalid sourcecode file. File not found!");
                 return -1;
             }
             
-            // create scanner for lexical analysis
+            // Create Scanner-object for lexical analysis
             Scanner scanner = new Scanner(sourceFilePath);
 
-            // create parser for syntax analysis
+            // Create Parser-object for syntax analysis
             Parser parser = new Parser(scanner);
             
-            // do the syntax analysis and create AST
-            parser.Parse();
-
+            // Syntax analysis and create AST intermediate representation
+            List<Node> ast = parser.Parse();
 
             // Semantic analysis
+            Semantix semalys = new Semantix(ast);
+            semalys.CheckConstraints();
 
             // Interpreter
+            if (parser.NoErrorsDetected() && semalys.NoErrorsDetected())
+            {
+                // No errors were detected from the source code
+                // Create new Interpreter-object and execute AST
+                Interpreter interpreter = new Interpreter(ast);
+                interpreter.Execute();
+            }
 
             // Done
             return 0;
