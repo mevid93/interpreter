@@ -9,7 +9,6 @@ namespace Interpreter
     enum NodeType {
         VARIABLE,       // node with variable
         INTEGER,        // node with constant integer
-        BOOLEAN,        // node with constant boolean
         STRING,         // node with constant string
         ASSIGN,         // node with assignment operation
         INIT,           // node with variable initialization
@@ -21,56 +20,37 @@ namespace Interpreter
         ADD,            // node that represents add operation
         MINUS,          // node that represents minus operation
         MULTIPLY,       // node that represents multiply operation
+        DIVIDE,         // node that represents division operation
         NOT,            // node that represents NOT operator (unary)
         ERROR           // in case of errors... this can be used
     }
 
     /// <summary>
-    /// class <c>Node</c> is abstract base class for nodes in abstract syntax tree.
+    /// class <c>Node</c> is node interface that must be implemented by nodes.
     /// </summary>
-    abstract class Node
+    interface Node
     {
-        protected string symbol;    // symbol of node
-        protected NodeType type;    // type of node
 
         /// <summary>
-        /// constructor <c>AST</c> creates AST-object.
-        /// </summary>
-        /// <param name="nodeType"></param>
-        /// <param name="nodeSymbol"></param>
-        public Node(NodeType nodeType, string nodeSymbol)
-        {
-            symbol = nodeSymbol;
-            type = nodeType;
-        }
-        
-        /// <summary>
-        /// method <c>GetNodeValue</c> returns the value of token corresponding the node.
+        /// method <c>CheckType</c> returns the type of node.
         /// </summary>
         /// <returns></returns>
-        public string GetNodeSymbol()
-        {
-            return symbol;
-        }
+        NodeType CheckType();
 
         /// <summary>
-        /// method <c>GetNodeType</c> returns the type of node. This is useful for
-        /// semantic analysis.
+        /// method <c>PrettyPrint</c> prints the string representation of node.
         /// </summary>
-        /// <returns></returns>
-        public NodeType GetNodeType()
-        {
-            return type;
-        }
+        void PrettyPrint();
 
         /// <summary>
-        /// method <c>PrintInformation</c> prints node information.
-        /// This is only used for debugging.
+        /// method <c>GetRow</c> returns the row in source column that corresponds the node in AST.
         /// </summary>
-        public virtual void PrintInformation()
-        {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol);
-        }
+        int GetRow();
+
+        /// <summary>
+        /// method <c>GetCol</c> returns the column in source column that corresponds the node in AST.
+        /// </summary>
+        int GetCol();
     }
 
     /// <summary>
@@ -79,34 +59,57 @@ namespace Interpreter
     /// </summary>
     class VariableNode: Node
     {
+        private string variableSymbol;  // symbol of variable
         private string variableType;    // type of variable
+        private int row;                // row in source code
+        private int col;                // column in source code
 
         /// <summary>
         /// constructor <c>VariableNode</c> creates new VariableNode-object.
         /// </summary>
-        /// <param name="nodeType"></param>
-        /// <param name="nodeSymbol"></param>
-        /// <param name="type"></param>
-        public VariableNode(string nodeSymbol, string type): base(NodeType.VARIABLE, nodeSymbol)
+        /// <param name="variableSymbol"></param>
+        /// <param name="variableType"></param>
+        public VariableNode(int row, int col, string variableSymbol, string variableType)
         {
-            this.variableType = type;
+            this.variableType = variableType;
+            this.variableSymbol = variableSymbol;
         }
 
         /// <summary>
-        /// method <c>GetType</c> returns the type of variable in node.
+        /// method <c>GetVariableSymbol</c> returns the identifier symbol for variable.
         /// </summary>
+        public string GetVariableSymbol()
+        {
+            return variableSymbol;
+        }
+
+        /// <summary>
+        /// method <c>GetVariableValue</c> returns the value of variable.
+        /// </summary>
+        /// <returns></returns>
         public string GetVariableType()
         {
-            return variableType;
+            return this.variableType;
         }
 
-        /// <summary>
-        /// Method <c>PrintInformation</c> prints the node information.
-        /// Method is only used for debugging.
-        /// </summary>
-        public override void PrintInformation()
+        public NodeType CheckType()
         {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol + ", variable type: " + variableType);
+            return NodeType.VARIABLE;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.VARIABLE + ", symbol: " + this.variableSymbol + ", variable type: " + this.variableType);
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 
@@ -115,12 +118,47 @@ namespace Interpreter
     /// </summary>
     class IntegerNode : Node
     {
+        private string integerValue;
+        private int row;                // row in source code
+        private int col;                // column in source code
+
         /// <summary>
         /// constructor <c>IntegerNode</c> creates new IntegerNode-object.
         /// </summary>
         /// <param name="nodeSymbol"></param>
-        public IntegerNode(string nodeSymbol): base(NodeType.INTEGER, nodeSymbol)
+        public IntegerNode(int row, int col, string integerValue)
         {
+            this.integerValue = integerValue;
+            this.row = row;
+            this.col = col;
+        }
+
+        /// <summary>
+        /// method <c>GetIntegerValue</c> returns integer (string representation) from node.
+        /// </summary>
+        public string GetIntegerValue()
+        {
+            return this.integerValue;
+        }
+
+        public NodeType CheckType()
+        {
+            return NodeType.INTEGER;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.INTEGER + ", value: " + this.integerValue);
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 
@@ -129,11 +167,49 @@ namespace Interpreter
     /// </summary>
     class StringNode: Node
     {
+        private string stringValue;
+        private int row;
+        private int col;
+
         /// <summary>
         /// constructor <c>StringNode</c> creates new StringNode-object.
         /// </summary>
-        /// <param name="nodeSymbol"></param>
-        public StringNode(string nodeSymbol):base(NodeType.STRING, nodeSymbol) { }
+        /// <param name="stringValue"></param>
+        public StringNode(int row, int col, string stringValue)
+        {
+            this.stringValue = stringValue;
+            this.row = row;
+            this.col = col;
+        }
+
+        /// <summary>
+        /// method <c>GetStringValue</c> returns string value from node.
+        /// </summary>
+        /// <returns></returns>
+        public string GetStringValue()
+        {
+            return this.stringValue;
+        }
+
+        public NodeType CheckType()
+        {
+            return NodeType.STRING;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.STRING + ", symbol: " + this.stringValue);
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
+        }
     }
 
     /// <summary>
@@ -142,8 +218,12 @@ namespace Interpreter
     /// </summary>
     class ExpressionNode: Node
     {
-        private Node lhs;       // left child tree
-        private Node rhs;       // right child tree
+        private NodeType type;      // type of node
+        private string nodeSymbol;  // symbol of node (operation)
+        private Node lhs;           // left child tree
+        private Node rhs;           // right child tree
+        private int row;
+        private int col;
 
         /// <summary>
         /// constructor <c>ExpressionNode</c> creates ExpressionNode-object.
@@ -151,10 +231,23 @@ namespace Interpreter
         /// <param name="nodeType"></param>
         /// <param name="symbol"></param>
         /// <param name="value"></param>
-        public ExpressionNode(NodeType nodeType, string nodeSymbol, Node lhs, Node rhs) : base(nodeType, nodeSymbol)
+        public ExpressionNode(int row, int col, NodeType nodeType, string nodeSymbol, Node lhs, Node rhs)
         {
             this.lhs = lhs;
             this.rhs = rhs;
+            this.type = nodeType;
+            this.nodeSymbol = nodeSymbol;
+            this.row = row;
+            this.col = col;
+        }
+
+        /// <summary>
+        /// method <c>GetNodeSymbol</c> returns the (operation) symbol of node.
+        /// </summary>
+        /// <returns></returns>
+        public string GetNodeSymbol()
+        {
+            return this.nodeSymbol;
         }
 
         /// <summary>
@@ -175,23 +268,34 @@ namespace Interpreter
             return rhs;
         }
 
-        /// <summary>
-        /// method <c>PrintInformation</c> prints node information.
-        /// Is only used for debugging.
-        /// </summary>
-        public override void PrintInformation()
+        public NodeType CheckType()
         {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol);
+            return this.type;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + this.type + ", symbol: " + this.nodeSymbol);
             if (lhs != null)
             {
                 Console.Write("LHS: ");
-                lhs.PrintInformation();
+                lhs.PrettyPrint();
             }
             if (rhs != null)
             {
                 Console.Write("RHS: ");
-                rhs.PrintInformation();
+                rhs.PrettyPrint();
             }
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 
@@ -200,29 +304,53 @@ namespace Interpreter
     /// </summary>
     class NotNode: Node
     {
-        private Node child;     // unary operator can only have one child
+        private Node child; // unary operator can only have one child
+        private int row;
+        private int col;
 
         /// <summary>
         /// constructor <c>NotNode</c> creates NotNode-object.
         /// </summary>
         /// <param name="nodeSymbol"></param>
         /// <param name="child"></param>
-        public NotNode(string nodeSymbol, Node child):base(NodeType.NOT, nodeSymbol)
+        public NotNode(int row, int col, Node child)
         {
             this.child = child;
+            this.row = row;
+            this.col = col;
         }
 
         /// <summary>
-        /// method <c>PrintInformation</c> prints node information.
-        /// Is only used for debugging.
+        /// method <c>GetChildNode</c> returns child node of node.
         /// </summary>
-        public override void PrintInformation()
+        /// <returns></returns>
+        public Node GetChildNode()
         {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol);
+            return this.child;
+        }
+
+        public NodeType CheckType()
+        {
+            return NodeType.NOT;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.NOT);
             if (child != null)
             {
-                child.PrintInformation();
+                child.PrettyPrint();
             }
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 
@@ -235,6 +363,8 @@ namespace Interpreter
         private Node start;                 // start value
         private Node end;                   // end value
         private List<Node> statements;      // list of statements that are executed in each iteration
+        private int row;
+        private int col;
 
         /// <summary>
         /// constructor <c>ForloopNode</c> creates new ForloopNode-object.
@@ -244,12 +374,14 @@ namespace Interpreter
         /// <param name="variable"></param>
         /// <param name="start"></param>
         /// <param name="end"></param>
-        public ForloopNode(string nodeSymbol, Node variable, Node start, Node end): base(NodeType.FOR_LOOP, nodeSymbol)
+        public ForloopNode(int row, int col, Node variable, Node start, Node end)
         {
             this.variable = variable;
             this.start = start;
             this.end = end;
-            statements = new List<Node>();
+            this.statements = new List<Node>();
+            this.row = row;
+            this.col = col;
         }
 
         /// <summary>
@@ -287,32 +419,42 @@ namespace Interpreter
             return statements;
         }
 
-        /// <summary>
-        /// method <c>PrintInformation</c> prints node information.
-        /// This method is only used for debugging.
-        /// </summary>
-        /// <returns></returns>
-        public override void PrintInformation()
+        public NodeType CheckType()
         {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol);
+            return NodeType.FOR_LOOP;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.FOR_LOOP);
             if(variable != null)
             {
-                variable.PrintInformation();
+                variable.PrettyPrint();
             }
             if (start != null)
             {
                 Console.Write("START: ");
-                start.PrintInformation();
+                start.PrettyPrint();
             }
             if (end != null)
             {
                 Console.Write("END: ");
-                end.PrintInformation();
+                end.PrettyPrint();
             }
             foreach(Node statement  in statements)
             {
-                statement.PrintInformation();
+                statement.PrettyPrint();
             }
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 
@@ -322,16 +464,22 @@ namespace Interpreter
     /// </summary>
     class FunctionNode: Node
     {
-        private Node parameter;     // parameter node
+        private string functionSymbol;      // function symbol
+        private Node parameter;             // parameter node
+        private int row;
+        private int col;
         
         /// <summary>
         /// constructor <c>FunctionNode</c> represents function call in AST.
         /// </summary>
         /// <param name="symbol"></param>
         /// <param name="parameter"></param>
-        public FunctionNode(string symbol, Node parameter): base(NodeType.FUNCTION, symbol)
+        public FunctionNode(int row, int col, string symbol, Node parameter)
         {
             this.parameter = parameter;
+            this.functionSymbol = symbol;
+            this.row = row;
+            this.col = col;
         }
 
         /// <summary>
@@ -343,18 +491,28 @@ namespace Interpreter
             return parameter;
         }
 
-        /// <summary>
-        /// method <c>ToString</c> prints node information.
-        /// This method is only used for debugging.
-        /// </summary>
-        /// <returns></returns>
-        public override void PrintInformation()
+        public NodeType CheckType()
         {
-            Console.WriteLine("Nodetype: " + type + ", symbol: " + symbol);
+            return NodeType.FUNCTION;
+        }
+
+        public void PrettyPrint()
+        {
+            Console.WriteLine("Nodetype: " + NodeType.FUNCTION + ", symbol: " + this.functionSymbol);
             if (parameter != null)
             {
-                parameter.PrintInformation();
+                parameter.PrettyPrint();
             }
+        }
+
+        public int GetRow()
+        {
+            return this.row;
+        }
+
+        public int GetCol()
+        {
+            return this.col;
         }
     }
 }

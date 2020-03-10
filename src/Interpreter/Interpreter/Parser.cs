@@ -137,42 +137,56 @@ namespace Interpreter
                 // variable declaration or initialization
                 case TokenType.KEYWORD_VAR:
                     Match(TokenType.KEYWORD_VAR);
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string id = Match(TokenType.IDENTIFIER);
+                    int row2 = inputToken.GetRow();
+                    int col2 = inputToken.GetColumn();
                     string symbol = Match(TokenType.SEPARATOR);
                     string type = ProcedureType();
-                    Node lhs = new VariableNode(id, type);
+                    Node lhs = new VariableNode(row, col, id, type);
                     Node rhs = null;
-                    Node node = new ExpressionNode(NodeType.INIT, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row2, col2, NodeType.INIT, symbol, lhs, rhs);
                     if (inputToken.GetTokenType() == TokenType.ASSIGNMENT)
                     {
+                        row = inputToken.GetRow();
+                        col = inputToken.GetColumn();
                         Match(TokenType.ASSIGNMENT);
                         rhs = ProcedureExpression();
-                        node = new ExpressionNode(NodeType.INIT, symbol, lhs, rhs);
+                        node = new ExpressionNode(row, col, NodeType.INIT, symbol, lhs, rhs);
                     }
                     Match(TokenType.STATEMENT_END);
                     return node;
 
                 // variable assignment
                 case TokenType.IDENTIFIER:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     id = Match(TokenType.IDENTIFIER);
+                    row2 = inputToken.GetRow();
+                    col2 = inputToken.GetColumn();
                     symbol = Match(TokenType.ASSIGNMENT);
-                    lhs = new VariableNode(id, null);
+                    lhs = new VariableNode(row, col, id, null);
                     rhs = ProcedureExpression();
-                    node = new ExpressionNode(NodeType.ASSIGN, symbol, lhs, rhs);
+                    node = new ExpressionNode(row2, col2, NodeType.ASSIGN, symbol, lhs, rhs);
                     Match(TokenType.STATEMENT_END);
                     return node;
 
                 // for loop
                 case TokenType.KEYWORD_FOR:
+                    row2 = inputToken.GetRow();
+                    col2 = inputToken.GetColumn();
                     symbol = Match(TokenType.KEYWORD_FOR);
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     id = Match(TokenType.IDENTIFIER);
                     Match(TokenType.KEYWORD_IN);
                     Node start = ProcedureExpression();
                     Match(TokenType.RANGE);
                     Node end = ProcedureExpression();
                     Match(TokenType.KEYWORD_DO);
-                    Node variable = new VariableNode(id, null);
-                    ForloopNode forNode = new ForloopNode(symbol, variable, start, end);
+                    Node variable = new VariableNode(row, col, id, null);
+                    ForloopNode forNode = new ForloopNode(row2, col2, variable, start, end);
                     while(inputToken.GetTokenType() != TokenType.EOF && inputToken.GetTokenType() != TokenType.KEYWORD_END)
                     {
                         Node stmnt = ProcedureStatement();
@@ -185,27 +199,35 @@ namespace Interpreter
                 
                 // reading input from user into variable
                 case TokenType.KEYWORD_READ:
+                    row2 = inputToken.GetRow();
+                    col2 = inputToken.GetColumn();
                     symbol = Match(TokenType.KEYWORD_READ);
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     id = Match(TokenType.IDENTIFIER);
-                    Node parameter = new VariableNode(id, null);
-                    node = new FunctionNode(symbol, parameter);
+                    Node parameter = new VariableNode(row, col, id, null);
+                    node = new FunctionNode(row2, col2, symbol, parameter);
                     Match(TokenType.STATEMENT_END);
                     return node;
 
                 // printing into console for user
                 case TokenType.KEYWORD_PRINT:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     symbol = Match(TokenType.KEYWORD_PRINT);
                     parameter = ProcedureExpression();
-                    node = new FunctionNode(symbol, parameter);
+                    node = new FunctionNode(row, col, symbol, parameter);
                     Match(TokenType.STATEMENT_END);
                     return node;
                 
                 // assert statement
                 case TokenType.KEYWORD_ASSERT:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     symbol = Match(TokenType.KEYWORD_ASSERT);
                     Match(TokenType.OPEN_PARENTHIS);
                     parameter = ProcedureExpression();
-                    node = new FunctionNode(symbol, parameter);
+                    node = new FunctionNode(row, col, symbol, parameter);
                     Match(TokenType.CLOSE_PARENTHIS);
                     Match(TokenType.STATEMENT_END);
                     return node;
@@ -285,10 +307,12 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.AND:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.AND);
                     Node rhs = ProcedureEquality();
                     rhs = ProcedureEqualityTail(rhs);
-                    Node node = new ExpressionNode(NodeType.LOGICAL_AND, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row, col, NodeType.LOGICAL_AND, symbol, lhs, rhs);
                     return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
@@ -336,10 +360,12 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.EQUALS:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.EQUALS);
                     Node rhs = ProcedureComparison();
                     rhs = ProcedureComparisonTail(rhs);
-                    Node node = new ExpressionNode(NodeType.EQUALITY, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row, col, NodeType.EQUALITY, symbol, lhs, rhs);
                     return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
@@ -388,10 +414,12 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.LESS_THAN:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.LESS_THAN);
                     Node rhs = ProcedureTerm();
                     rhs = ProcedureTermTail(rhs);
-                    Node node = new ExpressionNode(NodeType.LESS_THAN, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row, col, NodeType.LESS_THAN, symbol, lhs, rhs);
                     return node;
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.IDENTIFIER:
@@ -441,16 +469,20 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.ADD:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.ADD);
                     Node rhs = ProcedureFactor();
                     rhs = ProcedureFactorTail(rhs);
-                    Node node = new ExpressionNode(NodeType.ADD, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row, col, NodeType.ADD, symbol, lhs, rhs);
                     return node;
                 case TokenType.MINUS:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     symbol = Match(TokenType.MINUS);
                     rhs = ProcedureFactor();
                     rhs = ProcedureFactorTail(rhs);
-                    node = new ExpressionNode(NodeType.MINUS, symbol, lhs, rhs);
+                    node = new ExpressionNode(row, col, NodeType.MINUS, symbol, lhs, rhs);
                     return node;
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.IDENTIFIER:
@@ -501,11 +533,20 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.DIVIDE:
-                case TokenType.MULTIPLY:
-                    string symbol = Match(TokenType.MULTIPLY);
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
+                    string symbol = Match(TokenType.DIVIDE);
                     Node rhs = ProcedureFactor();
                     rhs = ProcedureFactorTail(rhs);
-                    Node node = new ExpressionNode(NodeType.MULTIPLY, symbol, lhs, rhs);
+                    Node node = new ExpressionNode(row, col, NodeType.DIVIDE, symbol, lhs, rhs);
+                    return node;
+                case TokenType.MULTIPLY:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
+                    symbol = Match(TokenType.MULTIPLY);
+                    rhs = ProcedureFactor();
+                    rhs = ProcedureFactorTail(rhs);
+                    node = new ExpressionNode(row, col, NodeType.MULTIPLY, symbol, lhs, rhs);
                     return node;
                 case TokenType.ADD:
                 case TokenType.MINUS:
@@ -565,9 +606,11 @@ namespace Interpreter
                     expression = ProcedureUnaryTail(expression);
                     return expression;
                 case TokenType.NOT:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.NOT);
                     Node child = ProcedureUnaryTail(lhs);
-                    NotNode node = new NotNode(symbol, child);
+                    NotNode node = new NotNode(row, col, child);
                     return node;
                 case TokenType.ADD:
                 case TokenType.MINUS:
@@ -598,14 +641,20 @@ namespace Interpreter
             switch (inputToken.GetTokenType())
             {
                 case TokenType.IDENTIFIER:
+                    int row = inputToken.GetRow();
+                    int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.IDENTIFIER);
-                    return new VariableNode(symbol, null);
+                    return new VariableNode(row, col, symbol, null);
                 case TokenType.VAL_INTEGER:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     symbol = Match(TokenType.VAL_INTEGER);
-                    return new IntegerNode(symbol);
+                    return new IntegerNode(row, col, symbol);
                 case TokenType.VAL_STRING:
+                    row = inputToken.GetRow();
+                    col = inputToken.GetColumn();
                     symbol = Match(TokenType.VAL_STRING);
-                    return new StringNode(symbol);
+                    return new StringNode(row, col, symbol);
                 case TokenType.OPEN_PARENTHIS:
                     Match(TokenType.OPEN_PARENTHIS);
                     Node expression = ProcedureExpression();
