@@ -73,6 +73,8 @@ namespace Interpreter
         {
             this.variableType = variableType;
             this.variableSymbol = variableSymbol;
+            this.row = row;
+            this.col = col;
         }
 
         /// <summary>
@@ -270,7 +272,7 @@ namespace Interpreter
 
         public NodeType CheckType()
         {
-            return this.type;
+            return type;
         }
 
         public void PrettyPrint()
@@ -393,9 +395,16 @@ namespace Interpreter
         }
 
         /// <summary>
+        /// method <c>GetVariable</c> returns the iterator variable.
+        /// </summary>
+        public Node GetVariable()
+        {
+            return this.variable;
+        }
+
+        /// <summary>
         /// method <c>GetStart</c> returns the node that evaluates as starting value for range.
         /// </summary>
-        /// <returns></returns>
         public Node GetStart()
         {
             return start;
@@ -489,6 +498,14 @@ namespace Interpreter
         public Node GetParameter()
         {
             return parameter;
+        }
+
+        /// <summary>
+        /// method <c>GetFunctionName</c> returns the name of the function.
+        /// </summary>
+        public string GetFunctionName()
+        {
+            return this.functionSymbol;
         }
 
         public NodeType CheckType()

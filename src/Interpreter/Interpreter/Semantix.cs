@@ -13,7 +13,7 @@ namespace Interpreter
         private List<Node> ast;                 // AST representation of source code
         private bool errorsDetected;            // flag telling about status of semantic analysis
         private SymbolTable symbolTable;        // stack like scoped scoped symbol table    
-        
+
         /// <summary>
         /// constructor <c>Semantix</c> creates new Semantix-object.
         /// </summary>
@@ -40,7 +40,7 @@ namespace Interpreter
         /// </summary>
         public void CheckConstraints()
         {
-            foreach(Node statement in ast)
+            foreach (Node statement in ast)
             {
                 CheckStatement(statement);
             }
@@ -70,34 +70,20 @@ namespace Interpreter
                     // check that the function call is semantically correct
                     CheckFunctionOperation(node);
                     break;
-                case NodeType.LOGICAL_AND:
-                case NodeType.EQUALITY:
-                case NodeType.LESS_THAN:
-                case NodeType.ADD:
-                case NodeType.MINUS:
-                case NodeType.MULTIPLY:
-                case NodeType.DIVIDE:
-                    // check binary operations (+,-,*,/,&,=,<) are semantically correct
-                    CheckBinaryOperations(node);
-                    break;
-                case NodeType.NOT:
-                    // check that the division operation is semantically correct
-                    CheckUnaryOperations(node);
-                    break;
                 default:
-                    break; 
+                    break;
             }
         }
 
         /// <summary>
-        /// method <c>CheckInitOperation</c> check that the declaration and initialization of 
+        /// method <c>CheckInitOperation</c> checks that the declaration and initialization of 
         /// variable is semantically correct.
         /// </summary>
         private void CheckInitOperation(Node node)
         {
             ExpressionNode ex = (ExpressionNode)node;
             VariableNode lhs = (VariableNode)ex.GetLhs();
-            ExpressionNode rhs = (ExpressionNode)ex.GetRhs();
+            Node rhs = ex.GetRhs();
 
             string varIdentifier = lhs.GetVariableSymbol();
             string varType = lhs.GetVariableType();
@@ -106,13 +92,13 @@ namespace Interpreter
             // check that variable is not initialized before
             if (symbolTable.IsSymbolInTable(varIdentifier))
             {
-                Console.WriteLine("Error... variable already declared in this scope...");
+                Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Variable {varIdentifier} already defined in this scope!");
                 errorsDetected = true;
                 return;
             }
 
             // if rhs expression is null, then the variable gets default value
-            if(rhs == null)
+            if (rhs == null)
             {
                 Symbol s = new Symbol(varIdentifier, lhs.GetVariableType(), "value", symbolTable.GetCurrentScope());
                 symbolTable.DeclareSymbol(s);
@@ -120,8 +106,8 @@ namespace Interpreter
             }
 
             // variable has not been declared before, so let's check that the expression matches the variable type
-            string type = GetTypeOfExpression(rhs);
-            if(type != null)
+            string type = GetNodeType(rhs);
+            if (type != null)
             {
                 if (type.Equals(varType))
                 {
@@ -130,35 +116,121 @@ namespace Interpreter
                 }
                 else
                 {
-                    Console.WriteLine("Expression type does not match variable type...");
+                    Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
                     errorsDetected = true;
                 }
             }
         }
 
+        /// <summary>
+        /// method <c>CheckAssignmentOperation</c> checks that the assignment operation is semantically correct. 
+        /// </summary>
         private void CheckAssignmentOperation(Node node)
         {
+            ExpressionNode ex = (ExpressionNode)node;
+            VariableNode lhs = (VariableNode)ex.GetLhs();
+            Node rhs = ex.GetRhs();
 
+            string varIdentifier = lhs.GetVariableSymbol();
+
+            // check that variable is initialized before
+            if (!symbolTable.IsSymbolInTable(varIdentifier))
+            {
+                Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Variable {varIdentifier} not declared in this scope!");
+                errorsDetected = true;
+                return;
+            }
+
+            // check that expression type matches with variable type
+            string type = GetNodeType(rhs);
+            string varType = symbolTable.GetSymbolByIdentifier(varIdentifier).GetSymbolType();
+            if (type != null && !type.Equals(varType))
+            {
+                Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
+                errorsDetected = true;
+            }
         }
 
+        /// <summary>
+        /// method <c>CheckAssignmentOperation</c> checks that the for loop is semantically correct. 
+        /// </summary>
         private void CheckForLoopOperation(Node node)
         {
+            ForloopNode forNode = (ForloopNode)node;
+            VariableNode varNode = (VariableNode)forNode.GetVariable();
+            Node start = forNode.GetStart();
+            Node end = forNode.GetEnd();
 
+            string varIdentifier = varNode.GetVariableSymbol();
+
+            // check that variable is initialized before
+            if (!symbolTable.IsSymbolInTable(varIdentifier))
+            {
+                Console.WriteLine($"SemanticError::Row {varNode.GetRow()}::Column {varNode.GetCol()}::Variable {varIdentifier} not declared in this scope!");
+                errorsDetected = true;
+                return;
+            }
+
+            // check that start node and end node types are int
+            string typeStart = GetNodeType(start);
+            string typeEnd = GetNodeType(end);
+            if (typeStart != null && !typeStart.Equals("int"))
+            {
+                Console.WriteLine($"SemanticError::Row {start.GetRow()}::Column {start.GetCol()}::Cannot implicitly convert {typeStart} to int!");
+                errorsDetected = true;
+            }
+            if (typeEnd != null && !typeEnd.Equals("int"))
+            {
+                Console.WriteLine($"SemanticError::Row {end.GetRow()}::Column {end.GetCol()}::Cannot implicitly convert {typeEnd} to int!");
+                errorsDetected = true;
+            }
+
+            // scope changes when entering for loop
+            symbolTable.AddScope();
+
+            // check all statements inside for loop
+            foreach (Node statement in forNode.GetStatements())
+            {
+                CheckStatement(statement);
+            }
+
+            // scope changes when exiting for loop
+            symbolTable.RemoveScope();
         }
 
+        /// <summary>
+        /// method <c>CheckFunctionOperation</c> checkc that function call is semantically correct.
+        /// </summary>
         private void CheckFunctionOperation(Node node)
         {
+            FunctionNode funcNode = (FunctionNode)node;
+            Node param = funcNode.GetParameter();
 
-        }
-
-        private void CheckBinaryOperations(Node node)
-        {
-
-        }
-
-        private void CheckUnaryOperations(Node node)
-        {
-
+            // multiple different functions...
+            if (funcNode.GetFunctionName().Equals("read"))
+            {
+                // check that the argument is variable and it is declared before
+                if (param.CheckType() == NodeType.VARIABLE)
+                {
+                    GetNodeType(param);
+                    return;
+                }
+                Console.WriteLine($"SemanticError::Row { funcNode.GetRow()}::Column { funcNode.GetCol()}::Argument is not variable!");
+            }
+            else if (funcNode.GetFunctionName().Equals("print"))
+            {
+                // enough to check that the argument has a type
+                GetNodeType(param);
+            }
+            else if (funcNode.GetFunctionName().Equals("assert"))
+            {
+                // check that the argument type is bool
+                string type = GetNodeType(param);
+                if (type != null && !type.Equals("bool"))
+                {
+                    Console.WriteLine($"SemanticError::Row { funcNode.GetRow()}::Column { funcNode.GetCol()}::Cannot implicitly convert {type} to bool!");
+                }
+            }
         }
 
         /// <summary>
@@ -168,69 +240,103 @@ namespace Interpreter
         /// </summary>
         private string GetTypeOfExpression(ExpressionNode node)
         {
-            Node lhs = node.GetLhs();               // get left hand side of expression
-            Node rhs = node.GetRhs();               // get right hand side of expression
-            NodeType operation = node.CheckType();  // return type of node (operator)
-            string lhsType = null;
-            string rhsType = null;
+            Node lhs = node.GetLhs();
+            Node rhs = node.GetRhs();
+            NodeType operation = node.CheckType();
+            string operationSymbol = node.GetNodeSymbol();
+            string lhsType = GetNodeType(lhs);
+            string rhsType = GetNodeType(rhs);
 
-            switch (lhs.CheckType())
+            if (lhsType == null || rhsType == null)
             {
-                case NodeType.INTEGER:
-                    lhsType = "int";
-                    break;
-                case NodeType.STRING:
-                    lhsType = "string";
-                    break;
-                case NodeType.VARIABLE:
-                // check that in symbol table
-                default:
-                    break;
+                return null;
             }
 
-            switch (rhs.CheckType())
-            {
-                case NodeType.INTEGER:
-                    lhsType = "int";
-                    break;
-                case NodeType.STRING:
-                    lhsType = "string";
-                    break;
-                case NodeType.VARIABLE:
-                // check that in symbol table
-                default:
-                    break;
-            }
+            string error = $"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Operation {operationSymbol} not supported between types {lhsType} and {rhsType}!";
 
             switch (operation)
             {
-                case NodeType.LESS_THAN:
                 case NodeType.LOGICAL_AND:
-                case NodeType.EQUALITY:
                     // lhs and rhs must be booleans
-                    if (lhsType == "bool" && rhsType == "bool") return "bool";
-                    Console.WriteLine("Error...Type mismatch in expression");
+                    if (lhsType.Equals("bool") && rhsType.Equals("bool")) return "bool";
+                    Console.WriteLine(error);
+                    errorsDetected = true;
+                    return null;
+                case NodeType.EQUALITY:
+                case NodeType.LESS_THAN:
+                    // lhs and rhs must be integers
+                    if (lhsType.Equals("string") && rhsType.Equals("string")) return "bool";
+                    if (lhsType.Equals("bool") && rhsType.Equals("bool")) return "bool";
+                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "bool";
+                    Console.WriteLine(error);
                     errorsDetected = true;
                     return null;
                 case NodeType.MINUS:
                 case NodeType.DIVIDE:
                 case NodeType.MULTIPLY:
                     // lhs and rhs must be integers
-                    if (lhsType == "int" && rhsType == "int") return "int";
-                    Console.WriteLine("Error...Type mismatch in expression");
+                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "int";
+                    Console.WriteLine(error);
                     errorsDetected = true;
                     return null;
                 case NodeType.ADD:
                     // lhs and rhs must be integers or strings
-                    if (lhsType == "int" && rhsType == "int") return "int";
-                    if (lhsType == "string" && rhsType == "string") return "string";
-                    Console.WriteLine("Error...Type mismatch in expression at row " + node.GetRow() + " and col " + node.GetCol());
+                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "int";
+                    if (lhsType.Equals("string") && rhsType.Equals("string")) return "string";
+                    Console.WriteLine(error);
                     errorsDetected = true;
                     return null;
                 default:
                     break;
             }
-            
+
+            return null;
+        }
+
+        /// <summary>
+        /// method <c>GetNodeType</c> returns the type of single node ("int", "string", "bool").
+        /// If errors are detected, returns null.
+        /// </summary>
+        /// <param name="node"></param>
+        private string GetNodeType(Node node)
+        {
+            if (node == null) return null;
+
+            switch (node.CheckType())
+            {
+                case NodeType.INTEGER:
+                    return "int";
+                case NodeType.STRING:
+                    return "string";
+                case NodeType.VARIABLE:
+                    VariableNode varNode = (VariableNode)node;
+                    if (symbolTable.IsSymbolInTable(varNode.GetVariableSymbol()))
+                    {
+                        return varNode.GetVariableType();
+                    }
+                    Console.WriteLine($"SemanticError::Row {node.GetRow()}::Column {node.GetCol()}::Variable {varNode.GetVariableSymbol()} not defined in this scope!");
+                    return null;
+                case NodeType.ADD:
+                case NodeType.DIVIDE:
+                case NodeType.MINUS:
+                case NodeType.MULTIPLY:
+                case NodeType.LESS_THAN:
+                case NodeType.LOGICAL_AND:
+                case NodeType.EQUALITY:
+                    ExpressionNode ex = (ExpressionNode)node;
+                    return GetTypeOfExpression(ex);
+                case NodeType.NOT:
+                    NotNode not = (NotNode)node;
+                    string type = GetNodeType(not);
+                    if (type.Equals("bool"))
+                    {
+                        return "bool";
+                    }
+                    Console.WriteLine($"SemanticError::Row {not.GetRow()}::Column {not.GetCol()}::Cannot implicitly convert {type} to bool!");
+                    return null;
+                default:
+                    break;
+            }
             return null;
         }
     }

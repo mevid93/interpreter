@@ -89,6 +89,7 @@ namespace Interpreter
             // could not find the symbol matching the identifier
             return null;
         }
+
     }
 
     /// <summary>
