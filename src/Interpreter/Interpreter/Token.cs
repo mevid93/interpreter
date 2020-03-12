@@ -3,55 +3,59 @@ namespace Interpreter
 {
 
     /// <summary>
-    /// enum <c>TokenType</c> which tells the type of token.
+    /// Enum <c>TokenType</c> indicates the type of token.
     /// </summary>
     public enum TokenType
     {
-        ADD,
-        AND,
-        ASSIGNMENT,
-        CLOSE_PARENTHIS,
-        DIVIDE,
-        EOF,
-        EQUALS,
-        ERROR,
-        IDENTIFIER,
-        KEYWORD_ASSERT,
-        KEYWORD_DO,
-        KEYWORD_FOR,
-        KEYWORD_END,
-        KEYWORD_IN,
-        KEYWORD_PRINT,
-        KEYWORD_READ,
-        KEYWORD_VAR,
-        LESS_THAN,
-        MINUS,
-        MULTIPLY,
-        NOT,
-        OPEN_PARENTHIS,
-        RANGE,
-        STATEMENT_END,
-        SEPARATOR,
-        TYPE_BOOL,
-        TYPE_INT,
-        TYPE_STRING,
-        VAL_BOOL,
-        VAL_INTEGER,
-        VAL_STRING
+        ADD,                    // + symbol (sum operation for integers and strings)
+        AND,                    // & symbol (logical AND operation)
+        ASSIGNMENT,             // := symbol (assingment operation)
+        CLOSE_PARENTHIS,        // ) symbol 
+        DIVIDE,                 // / symbol (division operation for integers)
+        EOF,                    // end-of-file indicator
+        EQUALS,                 // = symbol (comparison operator between integers, strings and booleans
+        ERROR,                  // error token for returning error information for parser
+        IDENTIFIER,             // token for identifier symbols in source code
+        KEYWORD_ASSERT,         // assert symbol (function keyword)
+        KEYWORD_DO,             // do symbol (keyword)
+        KEYWORD_FOR,            // for symbol (keyword)
+        KEYWORD_END,            // end symbol (keyword)
+        KEYWORD_IN,             // in symbol (keyword)
+        KEYWORD_PRINT,          // print symbol (keyword)
+        KEYWORD_READ,           // read symbol (keyrword)
+        KEYWORD_VAR,            // var symbol (keyword)
+        LESS_THAN,              // < symbol (less than operation)
+        MINUS,                  // - symbol (minus operatio from integers)
+        MULTIPLY,               // * symbol (multiplication operation for integers)
+        NOT,                    // ! symbol (logical not operation)
+        OPEN_PARENTHIS,         // ) symbol
+        RANGE,                  // .. symbol (for loop range)
+        STATEMENT_END,          // ; symbol
+        SEPARATOR,              // : symbol
+        TYPE_BOOL,              // bool symbol
+        TYPE_INT,               // int symbol
+        TYPE_STRING,            // string symbol
+        VAL_BOOL,               // THIS IS NOT USED (Mini-PL does not have source symbols for True and False
+        VAL_INTEGER,            // token for integer values
+        VAL_STRING              // token for string values
     }
 
     /// <summary>
-    /// class <c>Token</c> that represents single scanned token.
+    /// Class <c>Token</c> represents a token scanned from source code.
     /// </summary>
     class Token
     {
-        private TokenType type; // type of token
-        private string value;   // value of token
-        private int line;       // line where token exists in source code
-        private int column;     // column where token starts in source code
+        private readonly TokenType type;    // type of token
+        private readonly string value;      // value of token
+        private readonly int line;          // line where token exists in source code
+        private readonly int column;        // column where token starts in source code
 
         /// <summary>
-        /// constructor <c>Token</c> for creating Token object.
+        /// Constructor <c>Token</c> creates new Token-object.
+        /// <param name="tokenValue">source code symbol</param>
+        /// <param name="tokenType">Type of token</param>
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
         /// </summary>
         public Token(string tokenValue, TokenType tokenType, int row, int col)
         {
@@ -62,7 +66,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetTokenType</c> returns type of token.
+        /// Method <c>GetTokenType</c> returns the type of token.
         /// </summary>
         /// <returns>token type</returns>
         public TokenType GetTokenType()
@@ -71,7 +75,8 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetTokenValue</c> returns value of token.
+        /// Method <c>GetTokenValue</c> returns value of token. 
+        /// This is the symbol in source code.
         /// </summary>
         /// <returns>token value</returns>
         public string GetTokenValue()
@@ -80,16 +85,16 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetRow</c> returns the row number where token is in source code.
+        /// Method <c>GetRow</c> returns the row number where token is located in source code.
         /// </summary>
-        /// <returns>line number</returns>
+        /// <returns>row number</returns>
         public int GetRow()
         {
             return line;
         }
 
         /// <summary>
-        /// method <c>GetColumn</c> returns the column number where tokens starts in source code.
+        /// Method <c>GetColumn</c> returns the column number where token is located in source code.
         /// </summary>
         /// <returns>column number</returns>
         public int GetColumn()
@@ -98,9 +103,9 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ToString</c> returns string representation of Token-object.
+        /// Method <c>ToString</c> returns string representation of Token-object.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>token in string format</returns>
         override
         public string ToString()
         {
@@ -108,12 +113,13 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>FindTokenType</c> returns type of the token for given string.
-        /// if string is not a token, then ERROR is returned.
+        /// Method <c>FindTokenType</c> returns the type of the token for given string.
+        /// If string cannot be interpreted as a valid token, then ERROR token is returned.
         /// </summary>
         public static TokenType FindTokenType(string value)
         {
-            switch (value) {
+            switch (value)
+            {
                 case "(":
                     return TokenType.OPEN_PARENTHIS;
                 case ")":
@@ -158,10 +164,9 @@ namespace Interpreter
                     return TokenType.TYPE_STRING;
                 case "bool":
                     return TokenType.TYPE_BOOL;
+                default:
+                    return TokenType.ERROR;
             }
-
-            // Failed...
-            return TokenType.ERROR;
         }
 
     }
