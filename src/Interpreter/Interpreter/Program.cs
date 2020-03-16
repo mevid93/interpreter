@@ -24,7 +24,7 @@ namespace Interpreter
             }
 
             // check that input source code file exists
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code3.txt";
+            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
             if (!File.Exists(sourceFilePath))
             {
                 Console.WriteLine($"IOError::Invalid sourcecode file. File not found!");
