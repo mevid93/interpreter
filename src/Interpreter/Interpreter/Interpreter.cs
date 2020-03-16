@@ -293,8 +293,8 @@ namespace Interpreter
                 case NodeType.NOT:
                     NotNode not = (NotNode)node;
                     string value = GetNodeValue(not.GetChildNode());
-                    if (value.Equals("true")) return "true";
-                    return "false";
+                    if (value.Equals("true")) return "false";
+                    return "true";
                 default:
                     break;
             }

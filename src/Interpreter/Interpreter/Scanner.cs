@@ -116,7 +116,7 @@ namespace Interpreter
                                 c++;
                                 value += "\n";
                             }
-                            if (line[c] == '\\' && c < line.Length && line[c + 1] == '"')
+                            else if (line[c] == '\\' && c < line.Length && line[c + 1] == '"')
                             {
                                 c++;
                                 value += "\"";

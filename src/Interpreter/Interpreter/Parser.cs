@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace Interpreter
 {
     /// <summary>
-    /// class <c>Parser</c> performs the syntax analysis for source code.
-    /// Parser also constructs the AST.
+    /// Class <c>Parser</c> contains functionality to perform the syntax analysis for source code.
+    /// It also constructs the abstract syntax tree (AST).
     /// TOP-DOWN parsing by using LL(1).
     /// </summary>
     class Parser
@@ -15,33 +15,33 @@ namespace Interpreter
         private Token inputToken;       // current token in input
         private List<Node> statements;  // abstract syntax tree
         private bool errorsDetected;    // flag telling if errors were detected during parsing
-        private string lastError;       // last error which was printed --> prevents duplicate prints
+        private string lastError;       // last error which was printed --> used to prevent duplicate prints
 
         /// <summary>
-        /// constructor <c>Parser</c> creates new Parser-object.
+        /// Constructor <c>Parser</c> creates new Parser-object.
         /// </summary>
         /// <param name="tokenScanner">scanner-object</param>
         public Parser(Scanner tokenScanner)
         {
             scanner = tokenScanner;
             statements = new List<Node>();
-            errorsDetected = false;
         }
 
         /// <summary>
-        /// method <c>NoErrorsDetected</c> returns the result of parsing.
+        /// Method <c>NoErrorsDetected</c> returns the result of parsing.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>true if no errors were detected during parsing</returns>
         public bool NoErrorsDetected()
         {
             return !errorsDetected;
         }
 
         /// <summary>
-        /// method <c>Parse</c> starts syntax analysis for scanned content.
-        /// Returns the AST if parsing was succesfull. If erros were encountered,
-        /// then null is returned.
+        /// Method <c>Parse</c> starts the syntax analysis and building of AST.
+        /// Returns the AST if parsing was succesfull. 
+        /// If erros were encountered, then null is returned.
         /// </summary>
+        /// <returns>AST</returns>
         public List<Node> Parse()
         {
             ProcedureProgram();
@@ -49,9 +49,9 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>HandleError</c> handles error situtations. If errors
-        /// are encountered, then the rest of the statement is skipped and the parses
-        /// continues from the next statement. If EOF, then the parser stops.
+        /// Method <c>HandleError</c> handles error situtations. 
+        /// When parser encounters errors, then the rest of the statement is skipped and the parser
+        /// continues from the next statement. 
         /// </summary>
         private void HandleError()
         {
@@ -94,7 +94,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>Match</c> consumes token from input stream if it matches the expected.
+        /// Method <c>Match</c> consumes token from input stream if it matches the expected.
         /// Returns the matched token value.
         /// </summary>
         private string Match(TokenType expected)
@@ -113,22 +113,20 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureProgram</c> is the statring routine for the parsing.
+        /// Method <c>ProcedureProgram</c> starts the parsing and adds valid statements to AST.
         /// </summary>
         private void ProcedureProgram()
         {
             inputToken = scanner.ScanNextToken();
             while (inputToken.GetTokenType() != TokenType.EOF)
             {
-                // while not the end of the file --> process statement
                 Node node = ProcedureStatement();
-                // if valid statement --> add statement to AST
                 if (node != null) statements.Add(node);
             }
         }
 
         /// <summary>
-        /// method <c>ProcedureStatement</c> handles the statement processing.
+        /// Method <c>ProcedureStatement</c> handles the statement processing.
         /// </summary>
         private Node ProcedureStatement()
         {
@@ -239,7 +237,8 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureType</c> handles the type processing.
+        /// Method <c>ProcedureType</c> handles the type processing.
+        /// Returns the string representation of the type that was processed.
         /// </summary>
         private string ProcedureType()
         {
@@ -258,7 +257,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureExpression</c> handles the expression processing.
+        /// Method <c>ProcedureExpression</c> handles the expression processing.
         /// </summary>
         private Node ProcedureExpression()
         {
@@ -279,7 +278,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureLogicalAnd</c> handles the logical AND processing.
+        /// Method <c>ProcedureLogicalAnd</c> handles the logical AND processing.
         /// </summary>
         private Node ProcedureLogicalAnd()
         {
@@ -300,7 +299,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureLogicalAndTail</c> handles the end processing of logical AND.
+        /// Method <c>ProcedureLogicalAndTail</c> handles the end processing of logical AND.
         /// </summary>
         private Node ProcedureLogicalAndTail(Node lhs)
         {
@@ -332,7 +331,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureEquality</c> handles the processing of equality comparison.
+        /// Method <c>ProcedureEquality</c> handles the processing of equality comparison.
         /// </summary>
         private Node ProcedureEquality()
         {
@@ -353,7 +352,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProduceEqualityTail</c> handles the end processing of equality comparison.
+        /// Method <c>ProduceEqualityTail</c> handles the end processing of equality comparison.
         /// </summary>
         private Node ProcedureEqualityTail(Node lhs)
         {
@@ -386,7 +385,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureComparison</c> handles the processing of comparison operations (less than).
+        /// Method <c>ProcedureComparison</c> handles the processing of less than comparison.
         /// </summary>
         private Node ProcedureComparison()
         {
@@ -407,7 +406,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureComparisonTail</c> handles the end processing of comparison operations.
+        /// Method <c>ProcedureComparisonTail</c> handles the end processing of less than comparison.
         /// </summary>
         private Node ProcedureComparisonTail(Node lhs)
         {
@@ -441,7 +440,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProduceTerm</c> handles the processing of addivite (+, -) operations.
+        /// Method <c>ProduceTerm</c> handles the processing of addivite (+, -) operations.
         /// </summary>
         private Node ProcedureTerm()
         {
@@ -462,7 +461,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProduceTermTail</c> handles the end processing of additive (+, -) operations.
+        /// Method <c>ProduceTermTail</c> handles the end processing of additive (+, -) operations.
         /// </summary>
         private Node ProcedureTermTail(Node lhs)
         {
@@ -505,7 +504,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureFactor</c> handles the processing of multiplicative (*, /) operations.
+        /// Method <c>ProcedureFactor</c> handles the processing of multiplicative (*, /) operations.
         /// </summary>
         private Node ProcedureFactor()
         {
@@ -526,7 +525,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureFactorTail</c> handles the end processing of multiplicative operations.
+        /// Method <c>ProcedureFactorTail</c> handles the end processing of multiplicative operations.
         /// </summary>
         private Node ProcedureFactorTail(Node lhs)
         {
@@ -571,7 +570,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureUnary</c> handles the processing of unary opearations.
+        /// Method <c>ProcedureUnary</c> handles the processing of unary opearations.
         /// </summary>
         private Node ProcedureUnary()
         {
@@ -592,26 +591,23 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedureUnaryTail</c> handles the end processing of unary operations.
+        /// Method <c>ProcedureUnaryTail</c> handles the end processing of unary operations.
         /// </summary>
         private Node ProcedureUnaryTail(Node lhs)
         {
             switch (inputToken.GetTokenType())
             {
-                case TokenType.IDENTIFIER:
-                case TokenType.VAL_INTEGER:
-                case TokenType.VAL_STRING:
-                case TokenType.OPEN_PARENTHIS:
-                    Node expression = ProcedureUnary();
-                    expression = ProcedureUnaryTail(expression);
-                    return expression;
                 case TokenType.NOT:
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.NOT);
-                    Node child = ProcedureUnaryTail(lhs);
+                    Node child = ProcedurePrimary();
                     NotNode node = new NotNode(row, col, child);
                     return node;
+                case TokenType.IDENTIFIER:
+                case TokenType.VAL_INTEGER:
+                case TokenType.VAL_STRING:
+                case TokenType.OPEN_PARENTHIS:
                 case TokenType.ADD:
                 case TokenType.MINUS:
                 case TokenType.CLOSE_PARENTHIS:
@@ -634,7 +630,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>ProcedurePrimary</c> handles the processing of primary elements.
+        /// Method <c>ProcedurePrimary</c> handles the processing of primary elements.
         /// </summary>
         private Node ProcedurePrimary()
         {
