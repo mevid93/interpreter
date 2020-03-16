@@ -90,6 +90,22 @@ namespace Interpreter
             return null;
         }
 
+        /// <summary>
+        /// Method <c>UpdateSymbol</c> updates the value of symbol corresponding to given identifier.
+        /// </summary>
+        /// <param name="identifier">symbol to be updated</param>
+        /// <param name="value">new value for symbol</param>
+        public void UpdateSymbol(string identifier, string value)
+        {
+            foreach(Symbol s in symbols)
+            {
+                if (s.GetIdentifier().Equals(identifier))
+                {
+                    s.SetValue(value);
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -138,6 +154,14 @@ namespace Interpreter
         public string GetCurrentValue()
         {
             return this.currentValue;
+        }
+
+        /// <summary>
+        /// Method <c>SetValue</c> sets the value of symbol.
+        /// </summary>
+        public void SetValue(string newValue)
+        {
+            currentValue = newValue;
         }
 
         /// <summary>

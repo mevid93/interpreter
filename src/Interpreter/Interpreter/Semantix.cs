@@ -327,7 +327,7 @@ namespace Interpreter
                     return GetTypeOfExpression(ex);
                 case NodeType.NOT:
                     NotNode not = (NotNode)node;
-                    string type = GetNodeType(not);
+                    string type = GetNodeType(not.GetChildNode());
                     if (type.Equals("bool"))
                     {
                         return "bool";
