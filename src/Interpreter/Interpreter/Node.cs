@@ -33,7 +33,7 @@ namespace Interpreter
     interface INode
     {
         /// <summary>
-        /// Method <c>GetNodeType</c> returns the type of node.
+        /// Method <c>GetEvaluatedType</c> returns the type of node.
         /// </summary>
         /// <returns>the type of node</returns>
         NodeType GetNodeType();

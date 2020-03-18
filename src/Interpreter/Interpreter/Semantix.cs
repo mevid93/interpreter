@@ -102,7 +102,7 @@ namespace Interpreter
             }
 
             // variable has not been declared before, so let's check that the expression matches the variable type
-            string type = GetNodeType(rhs);
+            string type = GetEvaluatedType(rhs);
             if (type != null)
             {
                 if (type.Equals(varType))
@@ -138,7 +138,7 @@ namespace Interpreter
             }
 
             // check that expression type matches with variable type
-            string type = GetNodeType(rhs);
+            string type = GetEvaluatedType(rhs);
             string varType = symbolTable.GetSymbolByIdentifier(varIdentifier).GetSymbolType();
             if (type != null && !type.Equals(varType))
             {
@@ -168,8 +168,8 @@ namespace Interpreter
             }
 
             // check that start node and end node types are int
-            string typeStart = GetNodeType(start);
-            string typeEnd = GetNodeType(end);
+            string typeStart = GetEvaluatedType(start);
+            string typeEnd = GetEvaluatedType(end);
             if (typeStart != null && !typeStart.Equals("int"))
             {
                 Console.WriteLine($"SemanticError::Row {start.GetRow()}::Column {start.GetCol()}::Cannot implicitly convert {typeStart} to int!");
@@ -210,7 +210,7 @@ namespace Interpreter
                     VariableNode varNode = (VariableNode)param;
                     if(varNode.GetVariableSymbol() != null && !varNode.GetVariableSymbol().Equals(""))
                     {
-                        GetNodeType(param);
+                        GetEvaluatedType(param);
                         return;
                     }
                 }
@@ -219,12 +219,12 @@ namespace Interpreter
             else if (funcNode.GetFunctionName().Equals("print"))
             {
                 // enough to check that the argument has a type
-                GetNodeType(param);
+                GetEvaluatedType(param);
             }
             else if (funcNode.GetFunctionName().Equals("assert"))
             {
                 // check that the argument type is bool
-                string type = GetNodeType(param);
+                string type = GetEvaluatedType(param);
                 if (type != null && !type.Equals("bool"))
                 {
                     Console.WriteLine($"SemanticError::Row { param.GetRow()}::Column { param.GetCol()}::Cannot implicitly convert {type} to bool!");
@@ -235,8 +235,7 @@ namespace Interpreter
 
         /// <summary>
         /// Method <c>GetTypeOfExpression</c> evaluates the expression and returns the type of the return value.
-        /// If the expression contains errors, then null is returned. Any error that is discovered, will be 
-        /// printed to user.
+        /// If the expression contains errors, then null is returned. 
         /// </summary>
         private string GetTypeOfExpression(ExpressionNode node)
         {
@@ -244,15 +243,15 @@ namespace Interpreter
             INode rhs = node.GetRhs();
             NodeType operation = node.GetNodeType();
             string operationSymbol = node.GetNodeSymbol();
-            string lhsType = GetNodeType(lhs);
-            string rhsType = GetNodeType(rhs);
+            string lhsType = GetEvaluatedType(lhs);
+            string rhsType = GetEvaluatedType(rhs);
 
             if (lhsType == null || rhsType == null)
             {
                 return null;
             }
 
-            string error = $"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Operation {operationSymbol} not supported between types {lhsType} and {rhsType}!";
+            string error = $"SemanticError::Row {node.GetRow()}::Column {node.GetCol()}::Operation {operationSymbol} not supported between types {lhsType} and {rhsType}!";
 
             switch (operation)
             {
@@ -289,16 +288,15 @@ namespace Interpreter
                 default:
                     break;
             }
-
             return null;
         }
 
         /// <summary>
-        /// method <c>GetNodeType</c> returns the type of single node ("int", "string", "bool").
+        /// Method <c>GetEvaluatedType</c> returns the evaluated type of single node ("int", "string", "bool").
         /// If errors are detected, returns null.
         /// </summary>
-        /// <param name="node"></param>
-        private string GetNodeType(INode node)
+        /// <param name="node">return evaluation type of node</param>
+        private string GetEvaluatedType(INode node)
         {
             if (node == null) return null;
 
@@ -328,11 +326,8 @@ namespace Interpreter
                     return GetTypeOfExpression(ex);
                 case NodeType.NOT:
                     NotNode not = (NotNode)node;
-                    string type = GetNodeType(not.GetChildNode());
-                    if (type.Equals("bool"))
-                    {
-                        return "bool";
-                    }
+                    string type = GetEvaluatedType(not.GetChildNode());
+                    if (type.Equals("bool")) return "bool";
                     Console.WriteLine($"SemanticError::Row {not.GetRow()}::Column {not.GetCol()}::Cannot implicitly convert {type} to bool!");
                     return null;
                 default:

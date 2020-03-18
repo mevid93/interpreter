@@ -362,7 +362,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetNodeType</c> returns the type of single node ("int", "string", "bool").
+        /// method <c>GetEvaluatedType</c> returns the type of single node ("int", "string", "bool").
         /// If errors are detected, returns null.
         /// </summary>
         /// <param name="node"></param>
