@@ -5,7 +5,7 @@ namespace Interpreter
 {
     class Interpreter
     {
-        private List<Node> ast;                 // AST representation of the source code
+        private List<INode> ast;                 // AST representation of the source code
         private SymbolTable symbolTable;        // stack like scoped scoped symbol table
         private bool errorDetected;             // flag for runtime errors
 
@@ -13,7 +13,7 @@ namespace Interpreter
         /// Constructor <c>Interpreter</c> creates new Interpreter-object.
         /// </summary>
         /// <param name="ast">abstract syntax tree</param>
-        public Interpreter(List<Node> ast)
+        public Interpreter(List<INode> ast)
         {
             this.ast = ast;
             symbolTable = new SymbolTable();
@@ -24,7 +24,7 @@ namespace Interpreter
         /// </summary>
         public void Execute()
         {
-            foreach(Node statement in ast)
+            foreach(INode statement in ast)
             {
                 if (errorDetected) return;
                 ExecuteStatement(statement);
@@ -34,9 +34,9 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ExecuteStatement</c> executes individual source code statement.
         /// </summary>
-        private void ExecuteStatement(Node node)
+        private void ExecuteStatement(INode node)
         {
-            switch (node.CheckType())
+            switch (node.GetNodeType())
             {
                 case NodeType.INIT:
                     // execute initialization operation
@@ -63,11 +63,11 @@ namespace Interpreter
         /// Method <c>ExecuteInitOperation</c> executes a statement where variable is
         /// declared (and initialized).
         /// </summary>
-        private void ExecuteInitOperation(Node node)
+        private void ExecuteInitOperation(INode node)
         {
             ExpressionNode ex = (ExpressionNode)node;
             VariableNode lhs = (VariableNode)ex.GetLhs();
-            Node rhs = ex.GetRhs();
+            INode rhs = ex.GetRhs();
 
             string varIdentifier = lhs.GetVariableSymbol();
             string varType = lhs.GetVariableType();
@@ -93,11 +93,11 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ExecuteAssignmentOperation</c> executes the assignment statement. 
         /// </summary>
-        private void ExecuteAssignmentOperation(Node node)
+        private void ExecuteAssignmentOperation(INode node)
         {
             ExpressionNode ex = (ExpressionNode)node;
             VariableNode lhs = (VariableNode)ex.GetLhs();
-            Node rhs = ex.GetRhs();
+            INode rhs = ex.GetRhs();
 
             string varIdentifier = lhs.GetVariableSymbol();
 
@@ -110,12 +110,12 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ExecuteForLoopOperation</c> executes for loop expression. 
         /// </summary>
-        private void ExecuteForLoopOperation(Node node)
+        private void ExecuteForLoopOperation(INode node)
         {
             ForloopNode forNode = (ForloopNode)node;
             VariableNode varNode = (VariableNode)forNode.GetVariable();
-            Node start = forNode.GetStart();
-            Node end = forNode.GetEnd();
+            INode start = forNode.GetStart();
+            INode end = forNode.GetEnd();
 
             string varIdentifier = varNode.GetVariableSymbol();
 
@@ -134,7 +134,7 @@ namespace Interpreter
                 symbolTable.UpdateSymbol(varNode.GetVariableSymbol(), i + "");
 
                 // check all statements inside for loop
-                foreach (Node statement in forNode.GetStatements())
+                foreach (INode statement in forNode.GetStatements())
                 {
                     ExecuteStatement(statement);
                 }
@@ -147,10 +147,10 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ExecuteFunctionOperation</c> executes function call statement.
         /// </summary>
-        private void ExecuteFunctionOperation(Node node)
+        private void ExecuteFunctionOperation(INode node)
         {
             FunctionNode funcNode = (FunctionNode)node;
-            Node param = funcNode.GetParameter();
+            INode param = funcNode.GetParameter();
 
             // multiple different functions...
             if (funcNode.GetFunctionName().Equals("read"))
@@ -195,9 +195,9 @@ namespace Interpreter
         /// </summary>
         private string GetValueOfExpression(ExpressionNode node)
         {
-            Node lhs = node.GetLhs();
-            Node rhs = node.GetRhs();
-            NodeType operation = node.CheckType();
+            INode lhs = node.GetLhs();
+            INode rhs = node.GetRhs();
+            NodeType operation = node.GetNodeType();
             string operationSymbol = node.GetNodeSymbol();
             string lhsValue = GetNodeValue(lhs);
             string rhsValue = GetNodeValue(rhs);
@@ -266,11 +266,11 @@ namespace Interpreter
         /// Method <c>GetNodeValue</c> returns the value of single node in string representation.
         /// If errors are detected, returns null.
         /// </summary>
-        private string GetNodeValue(Node node)
+        private string GetNodeValue(INode node)
         {
             if (node == null) return null;
 
-            switch (node.CheckType())
+            switch (node.GetNodeType())
             {
                 case NodeType.INTEGER:
                     IntegerNode intNode = (IntegerNode)node;
@@ -308,9 +308,9 @@ namespace Interpreter
         /// </summary>
         private string GetTypeOfExpression(ExpressionNode node)
         {
-            Node lhs = node.GetLhs();
-            Node rhs = node.GetRhs();
-            NodeType operation = node.CheckType();
+            INode lhs = node.GetLhs();
+            INode rhs = node.GetRhs();
+            NodeType operation = node.GetNodeType();
             string operationSymbol = node.GetNodeSymbol();
             string lhsType = GetNodeType(lhs);
             string rhsType = GetNodeType(rhs);
@@ -366,11 +366,11 @@ namespace Interpreter
         /// If errors are detected, returns null.
         /// </summary>
         /// <param name="node"></param>
-        private string GetNodeType(Node node)
+        private string GetNodeType(INode node)
         {
             if (node == null) return null;
 
-            switch (node.CheckType())
+            switch (node.GetNodeType())
             {
                 case NodeType.INTEGER:
                     return "int";

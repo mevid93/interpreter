@@ -13,7 +13,7 @@ namespace Interpreter
 
         private Scanner scanner;        // scanner object
         private Token inputToken;       // current token in input
-        private List<Node> statements;  // abstract syntax tree
+        private List<INode> statements;  // abstract syntax tree
         private bool errorsDetected;    // flag telling if errors were detected during parsing
         private string lastError;       // last error which was printed --> used to prevent duplicate prints
 
@@ -24,7 +24,7 @@ namespace Interpreter
         public Parser(Scanner tokenScanner)
         {
             scanner = tokenScanner;
-            statements = new List<Node>();
+            statements = new List<INode>();
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Interpreter
         /// If erros were encountered, then null is returned.
         /// </summary>
         /// <returns>AST</returns>
-        public List<Node> Parse()
+        public List<INode> Parse()
         {
             ProcedureProgram();
             return statements;
@@ -120,7 +120,7 @@ namespace Interpreter
             inputToken = scanner.ScanNextToken();
             while (inputToken.GetTokenType() != TokenType.EOF)
             {
-                Node node = ProcedureStatement();
+                INode node = ProcedureStatement();
                 if (node != null) statements.Add(node);
             }
         }
@@ -128,7 +128,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureStatement</c> handles the statement processing.
         /// </summary>
-        private Node ProcedureStatement()
+        private INode ProcedureStatement()
         {
             switch (inputToken.GetTokenType())
             {
@@ -142,9 +142,9 @@ namespace Interpreter
                     int col2 = inputToken.GetColumn();
                     string symbol = Match(TokenType.SEPARATOR);
                     string type = ProcedureType();
-                    Node lhs = new VariableNode(row, col, id, type);
-                    Node rhs = null;
-                    Node node = new ExpressionNode(row2, col2, NodeType.INIT, symbol, lhs, rhs);
+                    INode lhs = new VariableNode(row, col, id, type);
+                    INode rhs = null;
+                    INode node = new ExpressionNode(row2, col2, NodeType.INIT, symbol, lhs, rhs);
                     if (inputToken.GetTokenType() == TokenType.ASSIGNMENT)
                     {
                         row = inputToken.GetRow();
@@ -179,15 +179,15 @@ namespace Interpreter
                     col = inputToken.GetColumn();
                     id = Match(TokenType.IDENTIFIER);
                     Match(TokenType.KEYWORD_IN);
-                    Node start = ProcedureExpression();
+                    INode start = ProcedureExpression();
                     Match(TokenType.RANGE);
-                    Node end = ProcedureExpression();
+                    INode end = ProcedureExpression();
                     Match(TokenType.KEYWORD_DO);
-                    Node variable = new VariableNode(row, col, id, null);
+                    INode variable = new VariableNode(row, col, id, null);
                     ForloopNode forNode = new ForloopNode(row2, col2, variable, start, end);
                     while(inputToken.GetTokenType() != TokenType.EOF && inputToken.GetTokenType() != TokenType.KEYWORD_END)
                     {
-                        Node stmnt = ProcedureStatement();
+                        INode stmnt = ProcedureStatement();
                         if (stmnt != null) forNode.AddStatement(stmnt);
                     }
                     Match(TokenType.KEYWORD_END);
@@ -203,7 +203,7 @@ namespace Interpreter
                     row = inputToken.GetRow();
                     col = inputToken.GetColumn();
                     id = Match(TokenType.IDENTIFIER);
-                    Node parameter = new VariableNode(row, col, id, null);
+                    INode parameter = new VariableNode(row, col, id, null);
                     node = new FunctionNode(row2, col2, symbol, parameter);
                     Match(TokenType.STATEMENT_END);
                     return node;
@@ -259,7 +259,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureExpression</c> handles the expression processing.
         /// </summary>
-        private Node ProcedureExpression()
+        private INode ProcedureExpression()
         {
             switch (inputToken.GetTokenType())
             {
@@ -268,7 +268,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureLogicalAnd();
+                    INode expression = ProcedureLogicalAnd();
                     expression = ProcedureLogicalAndTail(expression);
                     return expression;
                 default:
@@ -280,7 +280,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureLogicalAnd</c> handles the logical AND processing.
         /// </summary>
-        private Node ProcedureLogicalAnd()
+        private INode ProcedureLogicalAnd()
         {
             switch (inputToken.GetTokenType())
             {
@@ -289,7 +289,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureEquality();
+                    INode expression = ProcedureEquality();
                     expression = ProcedureEqualityTail(expression);
                     return expression;
                 default:
@@ -301,7 +301,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureLogicalAndTail</c> handles the end processing of logical AND.
         /// </summary>
-        private Node ProcedureLogicalAndTail(Node lhs)
+        private INode ProcedureLogicalAndTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -309,9 +309,9 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.AND);
-                    Node rhs = ProcedureEquality();
+                    INode rhs = ProcedureEquality();
                     rhs = ProcedureEqualityTail(rhs);
-                    Node node = new ExpressionNode(row, col, NodeType.LOGICAL_AND, symbol, lhs, rhs);
+                    INode node = new ExpressionNode(row, col, NodeType.LOGICAL_AND, symbol, lhs, rhs);
                     return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
@@ -333,7 +333,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureEquality</c> handles the processing of equality comparison.
         /// </summary>
-        private Node ProcedureEquality()
+        private INode ProcedureEquality()
         {
             switch (inputToken.GetTokenType())
             {
@@ -342,7 +342,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureComparison();
+                    INode expression = ProcedureComparison();
                     expression = ProcedureComparisonTail(expression);
                     return expression;
                 default:
@@ -354,7 +354,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProduceEqualityTail</c> handles the end processing of equality comparison.
         /// </summary>
-        private Node ProcedureEqualityTail(Node lhs)
+        private INode ProcedureEqualityTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -362,9 +362,9 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.EQUALS);
-                    Node rhs = ProcedureComparison();
+                    INode rhs = ProcedureComparison();
                     rhs = ProcedureComparisonTail(rhs);
-                    Node node = new ExpressionNode(row, col, NodeType.EQUALITY, symbol, lhs, rhs);
+                    INode node = new ExpressionNode(row, col, NodeType.EQUALITY, symbol, lhs, rhs);
                     return node;
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
@@ -387,7 +387,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureComparison</c> handles the processing of less than comparison.
         /// </summary>
-        private Node ProcedureComparison()
+        private INode ProcedureComparison()
         {
             switch (inputToken.GetTokenType())
             {
@@ -396,7 +396,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureTerm();
+                    INode expression = ProcedureTerm();
                     expression = ProcedureTermTail(expression);
                     return expression;
                 default:
@@ -408,7 +408,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureComparisonTail</c> handles the end processing of less than comparison.
         /// </summary>
-        private Node ProcedureComparisonTail(Node lhs)
+        private INode ProcedureComparisonTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -416,9 +416,9 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.LESS_THAN);
-                    Node rhs = ProcedureTerm();
+                    INode rhs = ProcedureTerm();
                     rhs = ProcedureTermTail(rhs);
-                    Node node = new ExpressionNode(row, col, NodeType.LESS_THAN, symbol, lhs, rhs);
+                    INode node = new ExpressionNode(row, col, NodeType.LESS_THAN, symbol, lhs, rhs);
                     return node;
                 case TokenType.CLOSE_PARENTHIS:
                 case TokenType.IDENTIFIER:
@@ -442,7 +442,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProduceTerm</c> handles the processing of addivite (+, -) operations.
         /// </summary>
-        private Node ProcedureTerm()
+        private INode ProcedureTerm()
         {
             switch (inputToken.GetTokenType())
             {
@@ -451,7 +451,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureFactor();
+                    INode expression = ProcedureFactor();
                     expression = ProcedureFactorTail(expression);
                     return expression;
                 default:
@@ -463,7 +463,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProduceTermTail</c> handles the end processing of additive (+, -) operations.
         /// </summary>
-        private Node ProcedureTermTail(Node lhs)
+        private INode ProcedureTermTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -471,9 +471,9 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.ADD);
-                    Node rhs = ProcedureFactor();
+                    INode rhs = ProcedureFactor();
                     rhs = ProcedureFactorTail(rhs);
-                    Node node = new ExpressionNode(row, col, NodeType.ADD, symbol, lhs, rhs);
+                    INode node = new ExpressionNode(row, col, NodeType.ADD, symbol, lhs, rhs);
                     return node;
                 case TokenType.MINUS:
                     row = inputToken.GetRow();
@@ -506,7 +506,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureFactor</c> handles the processing of multiplicative (*, /) operations.
         /// </summary>
-        private Node ProcedureFactor()
+        private INode ProcedureFactor()
         {
             switch (inputToken.GetTokenType())
             {
@@ -515,7 +515,7 @@ namespace Interpreter
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
                 case TokenType.NOT:
-                    Node expression = ProcedureUnary();
+                    INode expression = ProcedureUnary();
                     expression = ProcedureUnaryTail(expression);
                     return expression;
                 default:
@@ -527,7 +527,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureFactorTail</c> handles the end processing of multiplicative operations.
         /// </summary>
-        private Node ProcedureFactorTail(Node lhs)
+        private INode ProcedureFactorTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -535,9 +535,9 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.DIVIDE);
-                    Node rhs = ProcedureFactor();
+                    INode rhs = ProcedureFactor();
                     rhs = ProcedureFactorTail(rhs);
-                    Node node = new ExpressionNode(row, col, NodeType.DIVIDE, symbol, lhs, rhs);
+                    INode node = new ExpressionNode(row, col, NodeType.DIVIDE, symbol, lhs, rhs);
                     return node;
                 case TokenType.MULTIPLY:
                     row = inputToken.GetRow();
@@ -572,7 +572,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureUnary</c> handles the processing of unary opearations.
         /// </summary>
-        private Node ProcedureUnary()
+        private INode ProcedureUnary()
         {
             switch (inputToken.GetTokenType())
             {
@@ -580,7 +580,7 @@ namespace Interpreter
                 case TokenType.VAL_INTEGER:
                 case TokenType.VAL_STRING:
                 case TokenType.OPEN_PARENTHIS:
-                    Node expression = ProcedurePrimary();
+                    INode expression = ProcedurePrimary();
                     return expression;
                 case TokenType.NOT:
                     return null;
@@ -593,7 +593,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedureUnaryTail</c> handles the end processing of unary operations.
         /// </summary>
-        private Node ProcedureUnaryTail(Node lhs)
+        private INode ProcedureUnaryTail(INode lhs)
         {
             switch (inputToken.GetTokenType())
             {
@@ -601,7 +601,7 @@ namespace Interpreter
                     int row = inputToken.GetRow();
                     int col = inputToken.GetColumn();
                     string symbol = Match(TokenType.NOT);
-                    Node child = ProcedurePrimary();
+                    INode child = ProcedurePrimary();
                     NotNode node = new NotNode(row, col, child);
                     return node;
                 case TokenType.IDENTIFIER:
@@ -632,7 +632,7 @@ namespace Interpreter
         /// <summary>
         /// Method <c>ProcedurePrimary</c> handles the processing of primary elements.
         /// </summary>
-        private Node ProcedurePrimary()
+        private INode ProcedurePrimary()
         {
             switch (inputToken.GetTokenType())
             {
@@ -653,7 +653,7 @@ namespace Interpreter
                     return new StringNode(row, col, symbol);
                 case TokenType.OPEN_PARENTHIS:
                     Match(TokenType.OPEN_PARENTHIS);
-                    Node expression = ProcedureExpression();
+                    INode expression = ProcedureExpression();
                     Match(TokenType.CLOSE_PARENTHIS);
                     return expression;
                 default:

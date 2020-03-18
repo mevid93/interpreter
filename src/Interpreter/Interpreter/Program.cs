@@ -38,7 +38,7 @@ namespace Interpreter
             Parser parser = new Parser(scanner);
 
             // syntax analysis and create AST intermediate representation
-            List<Node> ast = parser.Parse();
+            List<INode> ast = parser.Parse();
 
             // semantic analysis
             Semantix semalys = new Semantix(ast);

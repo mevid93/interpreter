@@ -10,7 +10,7 @@ namespace Interpreter
     /// </summary>
     class Semantix
     {
-        private List<Node> ast;                 // AST representation of source code
+        private List<INode> ast;                 // AST representation of source code
         private bool errorsDetected;            // flag telling about status of semantic analysis
         private SymbolTable symbolTable;        // stack like scoped scoped symbol table    
 
@@ -18,7 +18,7 @@ namespace Interpreter
         /// constructor <c>Semantix</c> creates new Semantix-object.
         /// </summary>
         /// <param name="ast"></param>
-        public Semantix(List<Node> ast)
+        public Semantix(List<INode> ast)
         {
             this.ast = ast;
             errorsDetected = false;
@@ -40,7 +40,7 @@ namespace Interpreter
         /// </summary>
         public void CheckConstraints()
         {
-            foreach (Node statement in ast)
+            foreach (INode statement in ast)
             {
                 CheckStatement(statement);
             }
@@ -50,9 +50,9 @@ namespace Interpreter
         /// method <c>CheckStatement</c> performs semantical analysis for single statement.
         /// </summary>
         /// <param name="node"></param>
-        private void CheckStatement(Node node)
+        private void CheckStatement(INode node)
         {
-            switch (node.CheckType())
+            switch (node.GetNodeType())
             {
                 case NodeType.INIT:
                     // check that the initialization operation is semantically correct
@@ -79,11 +79,11 @@ namespace Interpreter
         /// method <c>CheckInitOperation</c> checks that the declaration and initialization of 
         /// variable is semantically correct.
         /// </summary>
-        private void CheckInitOperation(Node node)
+        private void CheckInitOperation(INode node)
         {
             ExpressionNode ex = (ExpressionNode)node;
             VariableNode lhs = (VariableNode)ex.GetLhs();
-            Node rhs = ex.GetRhs();
+            INode rhs = ex.GetRhs();
 
             string varIdentifier = lhs.GetVariableSymbol();
             string varType = lhs.GetVariableType();
@@ -125,11 +125,11 @@ namespace Interpreter
         /// <summary>
         /// method <c>CheckAssignmentOperation</c> checks that the assignment operation is semantically correct. 
         /// </summary>
-        private void CheckAssignmentOperation(Node node)
+        private void CheckAssignmentOperation(INode node)
         {
             ExpressionNode ex = (ExpressionNode)node;
             VariableNode lhs = (VariableNode)ex.GetLhs();
-            Node rhs = ex.GetRhs();
+            INode rhs = ex.GetRhs();
 
             string varIdentifier = lhs.GetVariableSymbol();
 
@@ -154,12 +154,12 @@ namespace Interpreter
         /// <summary>
         /// method <c>CheckAssignmentOperation</c> checks that the for loop is semantically correct. 
         /// </summary>
-        private void CheckForLoopOperation(Node node)
+        private void CheckForLoopOperation(INode node)
         {
             ForloopNode forNode = (ForloopNode)node;
             VariableNode varNode = (VariableNode)forNode.GetVariable();
-            Node start = forNode.GetStart();
-            Node end = forNode.GetEnd();
+            INode start = forNode.GetStart();
+            INode end = forNode.GetEnd();
 
             string varIdentifier = varNode.GetVariableSymbol();
 
@@ -189,7 +189,7 @@ namespace Interpreter
             symbolTable.AddScope();
 
             // check all statements inside for loop
-            foreach (Node statement in forNode.GetStatements())
+            foreach (INode statement in forNode.GetStatements())
             {
                 CheckStatement(statement);
             }
@@ -201,16 +201,16 @@ namespace Interpreter
         /// <summary>
         /// method <c>CheckFunctionOperation</c> checkc that function call is semantically correct.
         /// </summary>
-        private void CheckFunctionOperation(Node node)
+        private void CheckFunctionOperation(INode node)
         {
             FunctionNode funcNode = (FunctionNode)node;
-            Node param = funcNode.GetParameter();
+            INode param = funcNode.GetParameter();
 
             // multiple different functions...
             if (funcNode.GetFunctionName().Equals("read"))
             {
                 // check that the argument is variable and it is declared before
-                if (param.CheckType() == NodeType.VARIABLE)
+                if (param.GetNodeType() == NodeType.VARIABLE)
                 {
                     GetNodeType(param);
                     return;
@@ -240,9 +240,9 @@ namespace Interpreter
         /// </summary>
         private string GetTypeOfExpression(ExpressionNode node)
         {
-            Node lhs = node.GetLhs();
-            Node rhs = node.GetRhs();
-            NodeType operation = node.CheckType();
+            INode lhs = node.GetLhs();
+            INode rhs = node.GetRhs();
+            NodeType operation = node.GetNodeType();
             string operationSymbol = node.GetNodeSymbol();
             string lhsType = GetNodeType(lhs);
             string rhsType = GetNodeType(rhs);
@@ -298,11 +298,11 @@ namespace Interpreter
         /// If errors are detected, returns null.
         /// </summary>
         /// <param name="node"></param>
-        private string GetNodeType(Node node)
+        private string GetNodeType(INode node)
         {
             if (node == null) return null;
 
-            switch (node.CheckType())
+            switch (node.GetNodeType())
             {
                 case NodeType.INTEGER:
                     return "int";

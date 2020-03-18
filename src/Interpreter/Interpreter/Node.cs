@@ -4,9 +4,10 @@ using System.Collections.Generic;
 namespace Interpreter
 {
     /// <summary>
-    /// enum <c>NodeType</c> represents the type of node.
+    /// Enum <c>NodeType</c> represents the type of node.
     /// </summary>
-    enum NodeType {
+    enum NodeType
+    {
         VARIABLE,       // node with variable
         INTEGER,        // node with constant integer
         STRING,         // node with constant string
@@ -26,29 +27,29 @@ namespace Interpreter
     }
 
     /// <summary>
-    /// class <c>Node</c> is node interface that must be implemented by nodes.
+    /// Interface <c>INode</c> is node interface that defines all the methods that are 
+    /// required of different nodes in AST.
     /// </summary>
-    interface Node
+    interface INode
     {
-
         /// <summary>
-        /// method <c>CheckType</c> returns the type of node.
+        /// Method <c>GetNodeType</c> returns the type of node.
         /// </summary>
-        /// <returns></returns>
-        NodeType CheckType();
+        /// <returns>the type of node</returns>
+        NodeType GetNodeType();
 
         /// <summary>
-        /// method <c>PrettyPrint</c> prints the string representation of node.
+        /// Method <c>PrettyPrint</c> prints the string representation of node.
         /// </summary>
         void PrettyPrint();
 
         /// <summary>
-        /// method <c>GetRow</c> returns the row in source column that corresponds the node in AST.
+        /// Method <c>GetRow</c> returns the row in source code that corresponds the node in AST.
         /// </summary>
         int GetRow();
 
         /// <summary>
-        /// method <c>GetCol</c> returns the column in source column that corresponds the node in AST.
+        /// Method <c>GetCol</c> returns the column in source code that corresponds the node in AST.
         /// </summary>
         int GetCol();
     }
@@ -57,18 +58,20 @@ namespace Interpreter
     /// class <c>VariableNode</c> is variable holding node.
     /// When variables are parsed, variable node should be added to AST.
     /// </summary>
-    class VariableNode: Node
+    class VariableNode : INode
     {
-        private string variableSymbol;  // symbol of variable
-        private string variableType;    // type of variable
-        private int row;                // row in source code
-        private int col;                // column in source code
+        private readonly string variableSymbol;  // symbol of variable
+        private readonly string variableType;    // type of variable
+        private readonly int row;                // row in source code
+        private readonly int col;                // column in source code
 
         /// <summary>
-        /// constructor <c>VariableNode</c> creates new VariableNode-object.
+        /// Constructor <c>VariableNode</c> creates new VariableNode-object.
         /// </summary>
-        /// <param name="variableSymbol"></param>
-        /// <param name="variableType"></param>
+        /// <param name="row">row in source code</param>
+        /// <param name="col">col in source code</param>
+        /// <param name="variableSymbol">symbol of variable (identifier)</param>
+        /// <param name="variableType">type of variable</param>
         public VariableNode(int row, int col, string variableSymbol, string variableType)
         {
             this.variableType = variableType;
@@ -78,56 +81,44 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetVariableSymbol</c> returns the identifier symbol for variable.
+        /// Method <c>GetVariableSymbol</c> returns the identifier symbol for variable.
         /// </summary>
-        public string GetVariableSymbol()
-        {
-            return variableSymbol;
-        }
+        /// <returns>variable symbol (identifier)</returns>
+        public string GetVariableSymbol() { return variableSymbol; }
 
         /// <summary>
-        /// method <c>GetVariableValue</c> returns the value of variable.
+        /// Method <c>GetVariableValue</c> returns the value of variable.
         /// </summary>
-        /// <returns></returns>
-        public string GetVariableType()
-        {
-            return this.variableType;
-        }
+        /// <returns>value of variable</returns>
+        public string GetVariableType() { return variableType; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.VARIABLE;
-        }
+        public NodeType GetNodeType() { return NodeType.VARIABLE; }
 
         public void PrettyPrint()
         {
-            Console.WriteLine("Nodetype: " + NodeType.VARIABLE + ", symbol: " + this.variableSymbol + ", variable type: " + this.variableType);
+            Console.WriteLine("Nodetype: " + NodeType.VARIABLE + ", symbol: " + variableSymbol + ", variable type: " + variableType);
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>IntegerNode</c> represents constant ingeger.
+    /// Class <c>IntegerNode</c> is node that holds constant integer.
     /// </summary>
-    class IntegerNode : Node
+    class IntegerNode : INode
     {
-        private string integerValue;
-        private int row;                // row in source code
-        private int col;                // column in source code
+        private readonly string integerValue;       // integer value in node
+        private readonly int row;                   // row in source code
+        private readonly int col;                   // column in source code
 
         /// <summary>
-        /// constructor <c>IntegerNode</c> creates new IntegerNode-object.
+        /// Constructor <c>IntegerNode</c> creates new IntegerNode-object.
         /// </summary>
-        /// <param name="nodeSymbol"></param>
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="integerValue">constant integer value</param>
         public IntegerNode(int row, int col, string integerValue)
         {
             this.integerValue = integerValue;
@@ -136,47 +127,37 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetIntegerValue</c> returns integer (string representation) from node.
+        /// Method <c>GetIntegerValue</c> returns integer (string representation) valud from node.
         /// </summary>
-        public string GetIntegerValue()
-        {
-            return this.integerValue;
-        }
+        public string GetIntegerValue() { return integerValue; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.INTEGER;
-        }
+        public NodeType GetNodeType() { return NodeType.INTEGER; }
 
         public void PrettyPrint()
         {
-            Console.WriteLine("Nodetype: " + NodeType.INTEGER + ", value: " + this.integerValue);
+            Console.WriteLine("Nodetype: " + NodeType.INTEGER + ", value: " + integerValue);
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>StringNode</c> represents constant string.
+    /// Class <c>StringNode</c> is node that holds constant string.
     /// </summary>
-    class StringNode: Node
+    class StringNode : INode
     {
-        private string stringValue;
-        private int row;
-        private int col;
+        private readonly string stringValue;    // sting value
+        private readonly int row;               // row in source code
+        private readonly int col;               // column in source code
 
         /// <summary>
-        /// constructor <c>StringNode</c> creates new StringNode-object.
+        /// Constructor <c>StringNode</c> creates new StringNode-object.
         /// </summary>
-        /// <param name="stringValue"></param>
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="stringValue">string constant</param>
         public StringNode(int row, int col, string stringValue)
         {
             this.stringValue = stringValue;
@@ -185,99 +166,77 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetStringValue</c> returns string value from node.
+        /// Method <c>GetStringValue</c> returns string value from node.
         /// </summary>
-        /// <returns></returns>
-        public string GetStringValue()
-        {
-            return this.stringValue;
-        }
+        /// <returns>string constant</returns>
+        public string GetStringValue() { return stringValue; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.STRING;
-        }
+        public NodeType GetNodeType() { return NodeType.STRING; }
 
         public void PrettyPrint()
         {
-            Console.WriteLine("Nodetype: " + NodeType.STRING + ", symbol: " + this.stringValue);
+            Console.WriteLine("Nodetype: " + NodeType.STRING + ", symbol: " + stringValue);
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>ExpressionNode</c> represents nodes that have two child nodes.
-    /// There are multiple use cases for this node.
+    /// class <c>ExpressionNode</c> is node that holds binary expression (two child nodes).
     /// </summary>
-    class ExpressionNode: Node
+    class ExpressionNode : INode
     {
-        private NodeType type;      // type of node
-        private string nodeSymbol;  // symbol of node (operation)
-        private Node lhs;           // left child tree
-        private Node rhs;           // right child tree
-        private int row;
-        private int col;
+        private readonly NodeType type;         // type of node
+        private readonly string nodeSymbol;     // symbol of node (operation)
+        private readonly INode lhs;             // left child tree
+        private readonly INode rhs;             // right child tree
+        private readonly int row;               // row in source code
+        private readonly int col;               // column in source code
 
         /// <summary>
         /// constructor <c>ExpressionNode</c> creates ExpressionNode-object.
         /// </summary>
-        /// <param name="nodeType"></param>
-        /// <param name="symbol"></param>
-        /// <param name="value"></param>
-        public ExpressionNode(int row, int col, NodeType nodeType, string nodeSymbol, Node lhs, Node rhs)
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="nodeType">type of node</param>
+        /// <param name="nodeSymbol">symbol of binary operation</param>
+        /// <param name="lhs">left child (lhs of operation)</param>
+        /// <param name="rhs">right child (rhs of operation)</param>
+        public ExpressionNode(int row, int col, NodeType nodeType, string nodeSymbol, INode lhs, INode rhs)
         {
             this.lhs = lhs;
             this.rhs = rhs;
-            this.type = nodeType;
+            type = nodeType;
             this.nodeSymbol = nodeSymbol;
             this.row = row;
             this.col = col;
         }
 
         /// <summary>
-        /// method <c>GetNodeSymbol</c> returns the (operation) symbol of node.
+        /// Method <c>GetNodeSymbol</c> returns the (operation) symbol of node.
         /// </summary>
-        /// <returns></returns>
-        public string GetNodeSymbol()
-        {
-            return this.nodeSymbol;
-        }
+        /// <returns>operation symbol</returns>
+        public string GetNodeSymbol() { return nodeSymbol; }
 
         /// <summary>
-        /// method <c>GetLhs</c> returns lhs.
+        /// Method <c>GetLhs</c> returns left child node.
         /// </summary>
-        /// <returns></returns>
-        public Node GetLhs()
-        {
-            return lhs;
-        }
+        /// <returns>left child</returns>
+        public INode GetLhs() { return lhs; }
 
         /// <summary>
-        /// method <c>GetRhs</c> returns rhs.
+        /// Method <c>GetRhs</c> returns right child node.
         /// </summary>
-        /// <returns></returns>
-        public Node GetRhs()
-        {
-            return rhs;
-        }
+        /// <returns>right child</returns>
+        public INode GetRhs() { return rhs; }
 
-        public NodeType CheckType()
-        {
-            return type;
-        }
+        public NodeType GetNodeType() { return type; }
 
         public void PrettyPrint()
         {
-            Console.WriteLine("Nodetype: " + this.type + ", symbol: " + this.nodeSymbol);
+            Console.WriteLine("Nodetype: " + type + ", symbol: " + nodeSymbol);
             if (lhs != null)
             {
                 Console.Write("LHS: ");
@@ -290,32 +249,27 @@ namespace Interpreter
             }
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>NotNode</c> represents not operator.
+    /// Class <c>NotNode</c> is not for unary not operation.
     /// </summary>
-    class NotNode: Node
+    class NotNode : INode
     {
-        private Node child; // unary operator can only have one child
-        private int row;
-        private int col;
+        private readonly INode child;   // unary operator can only have one child
+        private readonly int row;       // row in source code
+        private readonly int col;       // column in source code
 
         /// <summary>
-        /// constructor <c>NotNode</c> creates NotNode-object.
+        /// Constructor <c>NotNode</c> creates NotNode-object.
         /// </summary>
-        /// <param name="nodeSymbol"></param>
-        /// <param name="child"></param>
-        public NotNode(int row, int col, Node child)
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="child">taget expression of not operation</param>
+        public NotNode(int row, int col, INode child)
         {
             this.child = child;
             this.row = row;
@@ -323,18 +277,12 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>GetChildNode</c> returns child node of node.
+        /// Method <c>GetChildNode</c> returns target expression node of not operation.
         /// </summary>
-        /// <returns></returns>
-        public Node GetChildNode()
-        {
-            return this.child;
-        }
+        /// <returns>target expression of not operation</returns>
+        public INode GetChildNode() { return child; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.NOT;
-        }
+        public NodeType GetNodeType() { return NodeType.NOT; }
 
         public void PrettyPrint()
         {
@@ -345,98 +293,79 @@ namespace Interpreter
             }
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>ForloopNode</c> represents for loop in AST.
+    /// Class <c>ForloopNode</c> is for loop in AST.
     /// </summary>
-    class ForloopNode: Node
+    class ForloopNode : INode
     {
-        private Node variable;              // variable that is assigned values in range from start to end
-        private Node start;                 // start value
-        private Node end;                   // end value
-        private List<Node> statements;      // list of statements that are executed in each iteration
-        private int row;
-        private int col;
+        private readonly INode variable;        // variable that is assigned values in range from start to end
+        private readonly INode start;           // start value
+        private readonly INode end;             // end value
+        private List<INode> statements;         // list of statements that are executed in each iteration
+        private readonly int row;               // row in source code
+        private readonly int col;               // column in source code
 
         /// <summary>
-        /// constructor <c>ForloopNode</c> creates new ForloopNode-object.
+        /// Constructor <c>ForloopNode</c> creates new ForloopNode-object.
         /// </summary>
-        /// <param name="nodeType"></param>
-        /// <param name="nodeSymbol"></param>
-        /// <param name="variable"></param>
-        /// <param name="start"></param>
-        /// <param name="end"></param>
-        public ForloopNode(int row, int col, Node variable, Node start, Node end)
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="variable">iterator variable</param>
+        /// <param name="start">start value for iteration</param>
+        /// <param name="end">end value for iteration</param>
+        public ForloopNode(int row, int col, INode variable, INode start, INode end)
         {
             this.variable = variable;
             this.start = start;
             this.end = end;
-            this.statements = new List<Node>();
+            statements = new List<INode>();
             this.row = row;
             this.col = col;
         }
 
         /// <summary>
-        /// method <c>AddStatement</c> adds new child (statement) to child nodes.
+        /// Method <c>AddStatement</c> adds new child (statement) to child nodes.
         /// </summary>
-        public void AddStatement(Node node)
+        public void AddStatement(INode node)
         {
             if (node != null) statements.Add(node);
         }
 
         /// <summary>
-        /// method <c>GetVariable</c> returns the iterator variable.
+        /// Method <c>GetVariable</c> returns the iterator variable.
         /// </summary>
-        public Node GetVariable()
-        {
-            return this.variable;
-        }
+        /// <returns>iterator variable</returns>
+        public INode GetVariable() { return variable; }
 
         /// <summary>
-        /// method <c>GetStart</c> returns the node that evaluates as starting value for range.
+        /// Method <c>GetStart</c> returns the node that evaluates as starting value for range.
         /// </summary>
-        public Node GetStart()
-        {
-            return start;
-        }
+        /// <returns>start value of iteration</returns>
+        public INode GetStart() { return start; }
 
         /// <summary>
-        /// method <c>GetEnd</c> returns the node that evaluates as end value for range.
+        /// Method <c>GetEnd</c> returns the node that evaluates as end value for range.
         /// </summary>
-        /// <returns></returns>
-        public Node GetEnd()
-        {
-            return end;
-        }
+        /// <returns>ending value of iteration</returns>
+        public INode GetEnd() { return end; }
 
         /// <summary>
-        /// method <c>GetStatements</c> returns all the child nodes (statements).
+        /// Method <c>GetStatements</c> returns all the child nodes (statements).
         /// </summary>
-        /// <returns></returns>
-        public List<Node> GetStatements()
-        {
-            return statements;
-        }
+        /// <returns>statements that are executed in for loop</returns>
+        public List<INode> GetStatements() { return statements; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.FOR_LOOP;
-        }
+        public NodeType GetNodeType() { return NodeType.FOR_LOOP; }
 
         public void PrettyPrint()
         {
             Console.WriteLine("Nodetype: " + NodeType.FOR_LOOP);
-            if(variable != null)
+            if (variable != null)
             {
                 variable.PrettyPrint();
             }
@@ -450,86 +379,66 @@ namespace Interpreter
                 Console.Write("END: ");
                 end.PrettyPrint();
             }
-            foreach(Node statement  in statements)
+            foreach (INode statement in statements)
             {
                 statement.PrettyPrint();
             }
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 
     /// <summary>
-    /// class <c>FunctionNode</c> represents function in AST.
-    /// Mini-PL only supports functions with single parameter.
+    /// Class <c>FunctionNode</c> represents function in AST.
     /// </summary>
-    class FunctionNode: Node
+    class FunctionNode : INode
     {
-        private string functionSymbol;      // function symbol
-        private Node parameter;             // parameter node
-        private int row;
-        private int col;
-        
+        private readonly string functionSymbol;     // function symbol
+        private readonly INode parameter;           // parameter node
+        private readonly int row;                   // row in source code
+        private readonly int col;                   // column in source code
+
         /// <summary>
-        /// constructor <c>FunctionNode</c> represents function call in AST.
+        /// Constructor <c>FunctionNode</c> creates new FunctionNode-object.
         /// </summary>
-        /// <param name="symbol"></param>
-        /// <param name="parameter"></param>
-        public FunctionNode(int row, int col, string symbol, Node parameter)
+        /// <param name="row">row in source code</param>
+        /// <param name="col">column in source code</param>
+        /// <param name="symbol">function symbol (function name)</param>
+        /// <param name="parameter">parameter for function call</param>
+        public FunctionNode(int row, int col, string symbol, INode parameter)
         {
             this.parameter = parameter;
-            this.functionSymbol = symbol;
+            functionSymbol = symbol;
             this.row = row;
             this.col = col;
         }
 
         /// <summary>
-        /// method <c>GetParameter</c> returns node representing function call parameter.
+        /// Method <c>GetParameter</c> returns node representing function call parameter.
         /// </summary>
-        /// <returns></returns>
-        public Node GetParameter()
-        {
-            return parameter;
-        }
+        /// <returns>function call parameter</returns>
+        public INode GetParameter() { return parameter; }
 
         /// <summary>
-        /// method <c>GetFunctionName</c> returns the name of the function.
+        /// Method <c>GetFunctionName</c> returns the name of the function.
         /// </summary>
-        public string GetFunctionName()
-        {
-            return this.functionSymbol;
-        }
+        public string GetFunctionName() { return functionSymbol; }
 
-        public NodeType CheckType()
-        {
-            return NodeType.FUNCTION;
-        }
+        public NodeType GetNodeType() { return NodeType.FUNCTION; }
 
         public void PrettyPrint()
         {
-            Console.WriteLine("Nodetype: " + NodeType.FUNCTION + ", symbol: " + this.functionSymbol);
+            Console.WriteLine("Nodetype: " + NodeType.FUNCTION + ", symbol: " + functionSymbol);
             if (parameter != null)
             {
                 parameter.PrettyPrint();
             }
         }
 
-        public int GetRow()
-        {
-            return this.row;
-        }
+        public int GetRow() { return row; }
 
-        public int GetCol()
-        {
-            return this.col;
-        }
+        public int GetCol() { return col; }
     }
 }
