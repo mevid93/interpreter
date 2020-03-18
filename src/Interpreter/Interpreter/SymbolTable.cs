@@ -110,7 +110,7 @@ namespace Interpreter
     /// <summary>
     /// Class <c>Symbol</c> represents single symbol in the symbol table.
     /// </summary>
-    public class Symbol
+    class Symbol
     {
         private readonly string identifier;         // variable symbol  (identifier)
         private readonly string type;               // variable type    ("string", "int", "bool")

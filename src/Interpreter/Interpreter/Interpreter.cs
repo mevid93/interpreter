@@ -201,8 +201,8 @@ namespace Interpreter
             string operationSymbol = node.GetNodeSymbol();
             string lhsValue = GetNodeValue(lhs);
             string rhsValue = GetNodeValue(rhs);
-            string lhsType = GetNodeType(lhs);
-            string rhsType = GetNodeType(rhs);
+            string lhsType = Semantix.GetEvaluatedType(lhs, symbolTable, ref errorDetected);
+            string rhsType = Semantix.GetEvaluatedType(rhs, symbolTable, ref errorDetected);
 
             switch (operation)
             {
@@ -295,102 +295,6 @@ namespace Interpreter
                     string value = GetNodeValue(not.GetChildNode());
                     if (value.Equals("true")) return "false";
                     return "true";
-                default:
-                    break;
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// method <c>GetTypeOfExpression</c> evaluates the expression and returns the type of the return value.
-        /// If the expression contains errors, then null is returned. Any error that is discovered, will be 
-        /// printed to user.
-        /// </summary>
-        private string GetTypeOfExpression(ExpressionNode node)
-        {
-            INode lhs = node.GetLhs();
-            INode rhs = node.GetRhs();
-            NodeType operation = node.GetNodeType();
-            string operationSymbol = node.GetNodeSymbol();
-            string lhsType = GetNodeType(lhs);
-            string rhsType = GetNodeType(rhs);
-
-            if (lhsType == null || rhsType == null)
-            {
-                return null;
-            }
-
-            string error = $"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Operation {operationSymbol} not supported between types {lhsType} and {rhsType}!";
-
-            switch (operation)
-            {
-                case NodeType.LOGICAL_AND:
-                    // lhs and rhs must be booleans
-                    if (lhsType.Equals("bool") && rhsType.Equals("bool")) return "bool";
-                    Console.WriteLine(error);
-                    errorDetected = true;
-                    return null;
-                case NodeType.EQUALITY:
-                case NodeType.LESS_THAN:
-                    // lhs and rhs must be integers
-                    if (lhsType.Equals("string") && rhsType.Equals("string")) return "bool";
-                    if (lhsType.Equals("bool") && rhsType.Equals("bool")) return "bool";
-                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "bool";
-                    Console.WriteLine(error);
-                    errorDetected = true;
-                    return null;
-                case NodeType.MINUS:
-                case NodeType.DIVIDE:
-                case NodeType.MULTIPLY:
-                    // lhs and rhs must be integers
-                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "int";
-                    Console.WriteLine(error);
-                    errorDetected = true;
-                    return null;
-                case NodeType.ADD:
-                    // lhs and rhs must be integers or strings
-                    if (lhsType.Equals("int") && rhsType.Equals("int")) return "int";
-                    if (lhsType.Equals("string") && rhsType.Equals("string")) return "string";
-                    Console.WriteLine(error);
-                    errorDetected = true;
-                    return null;
-                default:
-                    break;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// method <c>GetEvaluatedType</c> returns the type of single node ("int", "string", "bool").
-        /// If errors are detected, returns null.
-        /// </summary>
-        /// <param name="node"></param>
-        private string GetNodeType(INode node)
-        {
-            if (node == null) return null;
-
-            switch (node.GetNodeType())
-            {
-                case NodeType.INTEGER:
-                    return "int";
-                case NodeType.STRING:
-                    return "string";
-                case NodeType.VARIABLE:
-                    VariableNode varNode = (VariableNode)node;
-                    return symbolTable.GetSymbolByIdentifier(varNode.GetVariableSymbol()).GetSymbolType();
-                case NodeType.ADD:
-                case NodeType.DIVIDE:
-                case NodeType.MINUS:
-                case NodeType.MULTIPLY:
-                case NodeType.LESS_THAN:
-                case NodeType.LOGICAL_AND:
-                case NodeType.EQUALITY:
-                    ExpressionNode ex = (ExpressionNode)node;
-                    return GetTypeOfExpression(ex);
-                case NodeType.NOT:
-                    NotNode not = (NotNode)node;
-                    return "bool";
                 default:
                     break;
             }
