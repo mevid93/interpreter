@@ -4,30 +4,28 @@ using System.Collections.Generic;
 namespace Interpreter
 {
     /// <summary>
-    /// class <c>Semnatix</c> holds functionality to do semantic analysis for
+    /// Class <c>Semantix</c> holds functionality to do semantic analysis for
     /// intermediate representation of source code. In other words, it takes
-    /// AST as input, checks semantic constraints and reports any error it finds.
+    /// AST as input, checks semantic constraints and reports any errors it finds.
     /// </summary>
     class Semantix
     {
-        private List<INode> ast;                 // AST representation of source code
+        private readonly List<INode> ast;       // AST representation of source code
         private bool errorsDetected;            // flag telling about status of semantic analysis
         private SymbolTable symbolTable;        // stack like scoped scoped symbol table    
 
         /// <summary>
-        /// constructor <c>Semantix</c> creates new Semantix-object.
+        /// Constructor <c>Semantix</c> creates new Semantix-object.
         /// </summary>
-        /// <param name="ast"></param>
+        /// <param name="ast">AST</param>
         public Semantix(List<INode> ast)
         {
             this.ast = ast;
-            errorsDetected = false;
             symbolTable = new SymbolTable();
         }
 
         /// <summary>
-        /// method <c>NoErrorsDetected</c> returns the result of semantic analysis.
-        /// If no errors were detected, then it returns true, otherwise false.
+        /// Method <c>NoErrorsDetected</c> returns the result of semantic analysis.
         /// </summary>
         /// <returns>true if no errors were detected</returns>
         public bool NoErrorsDetected()
@@ -36,7 +34,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>CheckConstraints</c> checks the semantic constraints of source code.
+        /// Method <c>CheckConstraints</c> checks the semantic constraints of source code.
         /// </summary>
         public void CheckConstraints()
         {
@@ -47,9 +45,9 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>CheckStatement</c> performs semantical analysis for single statement.
+        /// Method <c>CheckStatement</c> performs semantical analysis for a single statement.
         /// </summary>
-        /// <param name="node"></param>
+        /// <param name="node">statement node</param>
         private void CheckStatement(INode node)
         {
             switch (node.GetNodeType())
@@ -76,8 +74,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>CheckInitOperation</c> checks that the declaration and initialization of 
-        /// variable is semantically correct.
+        /// Method <c>CheckInitOperation</c> checks that the initialization of variable is semantically correct.
         /// </summary>
         private void CheckInitOperation(INode node)
         {
@@ -88,7 +85,6 @@ namespace Interpreter
             string varIdentifier = lhs.GetVariableSymbol();
             string varType = lhs.GetVariableType();
 
-            // variablenode lhs is supposted to be declared/initialized
             // check that variable is not initialized before
             if (symbolTable.IsSymbolInTable(varIdentifier))
             {
@@ -116,14 +112,14 @@ namespace Interpreter
                 }
                 else
                 {
-                    Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
+                    Console.WriteLine($"SemanticError::Row {rhs.GetRow()}::Column {rhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
                     errorsDetected = true;
                 }
             }
         }
 
         /// <summary>
-        /// method <c>CheckAssignmentOperation</c> checks that the assignment operation is semantically correct. 
+        /// Method <c>CheckAssignmentOperation</c> checks that the assignment operation is semantically correct. 
         /// </summary>
         private void CheckAssignmentOperation(INode node)
         {
@@ -146,13 +142,13 @@ namespace Interpreter
             string varType = symbolTable.GetSymbolByIdentifier(varIdentifier).GetSymbolType();
             if (type != null && !type.Equals(varType))
             {
-                Console.WriteLine($"SemanticError::Row {lhs.GetRow()}::Column {lhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
+                Console.WriteLine($"SemanticError::Row {rhs.GetRow()}::Column {rhs.GetCol()}::Cannot implicitly convert {type} to {varType}!");
                 errorsDetected = true;
             }
         }
 
         /// <summary>
-        /// method <c>CheckAssignmentOperation</c> checks that the for loop is semantically correct. 
+        /// Method <c>CheckAssignmentOperation</c> checks that the for loop is semantically correct. 
         /// </summary>
         private void CheckForLoopOperation(INode node)
         {
@@ -199,23 +195,26 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// method <c>CheckFunctionOperation</c> checkc that function call is semantically correct.
+        /// Method <c>CheckFunctionOperation</c> check that function call is semantically correct.
         /// </summary>
         private void CheckFunctionOperation(INode node)
         {
             FunctionNode funcNode = (FunctionNode)node;
             INode param = funcNode.GetParameter();
 
-            // multiple different functions...
             if (funcNode.GetFunctionName().Equals("read"))
             {
                 // check that the argument is variable and it is declared before
                 if (param.GetNodeType() == NodeType.VARIABLE)
                 {
-                    GetNodeType(param);
-                    return;
+                    VariableNode varNode = (VariableNode)param;
+                    if(varNode.GetVariableSymbol() != null && !varNode.GetVariableSymbol().Equals(""))
+                    {
+                        GetNodeType(param);
+                        return;
+                    }
                 }
-                Console.WriteLine($"SemanticError::Row { funcNode.GetRow()}::Column { funcNode.GetCol()}::Argument is not variable!");
+                Console.WriteLine($"SemanticError::Row { param.GetRow()}::Column { param.GetCol()}::Argument is not variable!");
             }
             else if (funcNode.GetFunctionName().Equals("print"))
             {
@@ -228,13 +227,14 @@ namespace Interpreter
                 string type = GetNodeType(param);
                 if (type != null && !type.Equals("bool"))
                 {
-                    Console.WriteLine($"SemanticError::Row { funcNode.GetRow()}::Column { funcNode.GetCol()}::Cannot implicitly convert {type} to bool!");
+                    Console.WriteLine($"SemanticError::Row { param.GetRow()}::Column { param.GetCol()}::Cannot implicitly convert {type} to bool!");
+                    errorsDetected = true;
                 }
             }
         }
 
         /// <summary>
-        /// method <c>GetTypeOfExpression</c> evaluates the expression and returns the type of the return value.
+        /// Method <c>GetTypeOfExpression</c> evaluates the expression and returns the type of the return value.
         /// If the expression contains errors, then null is returned. Any error that is discovered, will be 
         /// printed to user.
         /// </summary>
@@ -315,6 +315,7 @@ namespace Interpreter
                         return varNode.GetVariableType();
                     }
                     Console.WriteLine($"SemanticError::Row {node.GetRow()}::Column {node.GetCol()}::Variable {varNode.GetVariableSymbol()} not defined in this scope!");
+                    errorsDetected = true;
                     return null;
                 case NodeType.ADD:
                 case NodeType.DIVIDE:

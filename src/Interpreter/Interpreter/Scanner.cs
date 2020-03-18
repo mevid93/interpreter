@@ -93,14 +93,14 @@ namespace Interpreter
                             return new Token("..", TokenType.RANGE, r + 1, c + 1);
                         }
                         colNum = c + 1;
-                        string errorDot = $"LexicalError::Row {r + 1}::Column {c + 1}::Expected '.'";
-                        System.Console.WriteLine(errorDot);
+                        string errorDot = $"LexicalError::Row {r + 1}::Column {c + 1}::Expected '.'!";
                         return new Token(errorDot, TokenType.ERROR, r + 1, c + 1);
                     }
 
                     // check if character is " --> start of string
                     if (line[c] == '"')
                     {
+                        int startCol = c + 1;
                         string value = "";
                         bool ended = false;
                         c++;
@@ -130,17 +130,17 @@ namespace Interpreter
                         if (ended)
                         {
                             colNum = c + 1;
-                            return new Token(value, TokenType.VAL_STRING, r + 1, c + 1);
+                            return new Token(value, TokenType.VAL_STRING, r + 1, startCol);
                         }
-                        colNum = c + 1;
-                        string errorSlash = $"LexicalError::Row {r + 1}::Column {c + 1}::Expected '\"'";
-                        System.Console.WriteLine(errorSlash);
+                        colNum = c - 1;
+                        string errorSlash = $"LexicalError::Row {r + 1}::Column {c + 1}::Expected '\"'!";
                         return new Token(errorSlash, TokenType.ERROR, r + 1, c + 1);
                     }
 
                     // check if character is digit --> start of number
                     if (char.IsDigit(line[c]))
                     {
+                        int startCol = c + 1;
                         string number = "" + line[c];
                         while (c + 1 < line.Length && char.IsDigit(line[c + 1]))
                         {
@@ -148,27 +148,27 @@ namespace Interpreter
                             c++;
                         }
                         colNum = c + 1;
-                        return new Token(number, TokenType.VAL_INTEGER, r + 1, c + 1);
+                        return new Token(number, TokenType.VAL_INTEGER, r + 1, startCol);
                     }
 
                     // check if next character is alphabet --> start of identifier or keyword
                     if (IsAlphabet(line[c]))
                     {
+                        int startCol = c + 1;
                         string letters = "" + line[c];
-                        while (char.IsDigit(line[c + 1]) || IsAlphabet(line[c + 1]))
+                        while (c + 1 < line.Length && (char.IsDigit(line[c + 1]) || IsAlphabet(line[c + 1])))
                         {
                             letters += line[c + 1];
                             c++;
                         }
                         string[] keywords = { "var", "for", "end", "in", "do", "read", "print", "int", "string", "bool", "assert" };
                         colNum = c + 1;
-                        if (keywords.Contains(letters)) return new Token(letters, Token.FindTokenType(letters), r + 1, c + 1);
-                        return new Token(letters, TokenType.IDENTIFIER, r + 1, c + 1);
+                        if (keywords.Contains(letters)) return new Token(letters, Token.FindTokenType(letters), r + 1, startCol);
+                        return new Token(letters, TokenType.IDENTIFIER, r + 1, startCol);
                     }
 
                     // could not scan the content into valid token
                     string error = $"LexicalError::Row {r + 1}::Column {c + 1}::Illegal character!";
-                    System.Console.WriteLine(error);
                     colNum = c + 1;
                     return new Token(error, TokenType.ERROR, r + 1, c + 1);
                 }

@@ -61,7 +61,7 @@ namespace Interpreter
             // print error to user
             if (inputToken.GetTokenType() == TokenType.ERROR)
             {
-                if (lastError == null || lastError != inputToken.GetTokenValue())
+                if (lastError == null || !lastError.Equals(inputToken.GetTokenValue()))
                 {
                     Console.WriteLine(inputToken.GetTokenValue());
                     lastError = inputToken.GetTokenValue();
