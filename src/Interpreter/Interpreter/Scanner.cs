@@ -73,8 +73,8 @@ namespace Interpreter
                     // check if character is / --> three valid cases
                     if (line[c] == '/')
                     {
-                        if (line[c] < line.Length - 1 && line[c + 1] == '/') break;
-                        if (line[c] < line.Length - 1 && line[c + 1] == '*')
+                        if (c < line.Length - 1 && line[c + 1] == '/') break;
+                        if (c < line.Length - 1 && line[c + 1] == '*')
                         {
                             processingCommentblock = true;
                             c++;

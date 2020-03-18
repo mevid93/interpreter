@@ -317,7 +317,8 @@ namespace Interpreter
                     VariableNode varNode = (VariableNode)node;
                     if (symbolTable.IsSymbolInTable(varNode.GetVariableSymbol()))
                     {
-                        return varNode.GetVariableType();
+                        Symbol s = symbolTable.GetSymbolByIdentifier(varNode.GetVariableSymbol());
+                        return s.GetSymbolType();
                     }
                     Console.WriteLine($"SemanticError::Row {node.GetRow()}::Column {node.GetCol()}::Variable {varNode.GetVariableSymbol()} not defined in this scope!");
                     errorsDetected = true;

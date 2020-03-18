@@ -87,7 +87,7 @@ namespace Interpreter
         public string GetVariableSymbol() { return variableSymbol; }
 
         /// <summary>
-        /// Method <c>GetVariableValue</c> returns the value of variable.
+        /// Method <c>GetVariableValue</c> returns the value (identifier) of variable.
         /// </summary>
         /// <returns>value of variable</returns>
         public string GetVariableType() { return variableType; }
