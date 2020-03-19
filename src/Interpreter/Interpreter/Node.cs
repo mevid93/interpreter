@@ -102,6 +102,8 @@ namespace Interpreter
         public int GetRow() { return row; }
 
         public int GetCol() { return col; }
+
+        public override string ToString() { return variableSymbol; }
     }
 
     /// <summary>
@@ -141,6 +143,8 @@ namespace Interpreter
         public int GetRow() { return row; }
 
         public int GetCol() { return col; }
+
+        public override string ToString() { return integerValue; }
     }
 
     /// <summary>
@@ -181,6 +185,8 @@ namespace Interpreter
         public int GetRow() { return row; }
 
         public int GetCol() { return col; }
+
+        public override string ToString() { return stringValue; }
     }
 
     /// <summary>
@@ -252,6 +258,22 @@ namespace Interpreter
         public int GetRow() { return row; }
 
         public int GetCol() { return col; }
+
+        public override string ToString()
+        {
+            string result = "(";
+            if(lhs != null)
+            {
+                result += lhs.ToString() + " ";
+            }
+            result += nodeSymbol + " ";
+            if(rhs != null)
+            {
+                result += rhs.ToString();
+            }
+            result += ")";
+            return result;
+        }
     }
 
     /// <summary>
@@ -296,6 +318,11 @@ namespace Interpreter
         public int GetRow() { return row; }
 
         public int GetCol() { return col; }
+
+        public override string ToString()
+        {
+            return "!" + child.ToString();
+        }
     }
 
     /// <summary>

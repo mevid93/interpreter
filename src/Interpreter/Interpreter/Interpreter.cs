@@ -191,7 +191,10 @@ namespace Interpreter
                 string value = GetNodeValue(param);
                 if (value.Equals("false"))
                 {
-                    Console.WriteLine("Expected the result to be true. Got false");
+                    Console.Write($"AssertionError::Row {param.GetRow()}::Column {node.GetCol() + 6}::");
+                    Console.Write("Was expecting the expression ");
+                    Console.Write(param.ToString());
+                    Console.WriteLine(" to be true but got false!");
                 }
             }
         }
