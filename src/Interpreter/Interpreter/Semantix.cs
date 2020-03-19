@@ -337,6 +337,7 @@ namespace Interpreter
                     string type = GetEvaluatedType(not.GetChildNode(), symbolTable, ref errorsDetected);
                     if (type.Equals("bool")) return "bool";
                     Console.WriteLine($"SemanticError::Row {not.GetRow()}::Column {not.GetCol()}::Cannot implicitly convert {type} to bool!");
+                    errorsDetected = true;
                     return null;
                 default:
                     break;

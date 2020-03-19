@@ -215,6 +215,11 @@ namespace Interpreter
             string lhsType = Semantix.GetEvaluatedType(lhs, symbolTable, ref errorDetected);
             string rhsType = Semantix.GetEvaluatedType(rhs, symbolTable, ref errorDetected);
 
+            if(lhsType == null || rhsType == null)
+            {
+                return null;
+            }
+
             switch (operation)
             {
                 case NodeType.LOGICAL_AND:

@@ -16,6 +16,7 @@ namespace Interpreter
         private List<INode> statements;  // abstract syntax tree
         private bool errorsDetected;    // flag telling if errors were detected during parsing
         private string lastError;       // last error which was printed --> used to prevent duplicate prints
+        private bool errorCurrent;      // flag to check if there are errors in current statement
 
         /// <summary>
         /// Constructor <c>Parser</c> creates new Parser-object.
@@ -55,6 +56,8 @@ namespace Interpreter
         /// </summary>
         private void HandleError()
         {
+            if (errorCurrent) return;
+            errorCurrent = true;
             // define different error types
             string defaultError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Invalid syntax!";
             string eofError = $"SyntaxError::Row {inputToken.GetRow()}::Column {inputToken.GetColumn()}::Unexpected end of file!";
@@ -121,7 +124,13 @@ namespace Interpreter
             while (inputToken.GetTokenType() != TokenType.EOF)
             {
                 INode node = ProcedureStatement();
-                if (node != null) statements.Add(node);
+                if (node != null && !errorCurrent) statements.Add(node);
+                // if last statement had error --> then the error recovery might had find the next end of statement
+                if (errorCurrent && inputToken.GetTokenType() == TokenType.STATEMENT_END)
+                {
+                    inputToken = scanner.ScanNextToken();
+                }
+                errorCurrent = false;
             }
         }
 
@@ -189,6 +198,7 @@ namespace Interpreter
                     {
                         INode stmnt = ProcedureStatement();
                         if (stmnt != null) forNode.AddStatement(stmnt);
+                        if (errorCurrent) break;
                     }
                     Match(TokenType.KEYWORD_END);
                     Match(TokenType.KEYWORD_FOR);
