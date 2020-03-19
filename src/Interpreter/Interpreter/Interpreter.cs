@@ -3,14 +3,17 @@ using System.Collections.Generic;
 
 namespace Interpreter
 {
+    /// <summary>
+    /// Class <c>Interpreter</c> holds the functionality to execute the AST.
+    /// </summary>
     class Interpreter
     {
-        private List<INode> ast;                 // AST representation of the source code
+        private readonly List<INode> ast;       // AST representation of the source code
         private SymbolTable symbolTable;        // stack like scoped scoped symbol table
         private bool errorDetected;             // flag for runtime errors
 
         /// <summary>
-        /// Constructor <c>Interpreter</c> creates new Interpreter-object.
+        /// Constructor <c>Interpreter</c> creates Interpreter-object.
         /// </summary>
         /// <param name="ast">abstract syntax tree</param>
         public Interpreter(List<INode> ast)
@@ -20,7 +23,7 @@ namespace Interpreter
         }
 
         /// <summary>
-        /// Method <c>Execute</c> executes the source code statements.
+        /// Method <c>Execute</c> executes the "statement" nodes in AST.
         /// </summary>
         public void Execute()
         {
@@ -74,20 +77,19 @@ namespace Interpreter
 
             // if rhs expression is null, then the variable gets default value
             string value = null;
-            Symbol s;
             if (rhs == null)
             {
                 if (lhs.GetVariableType().Equals("int")) value = "0";
                 if (lhs.GetVariableType().Equals("bool")) value = "false";
-                s = new Symbol(varIdentifier, lhs.GetVariableType(), value, symbolTable.GetCurrentScope());
+                Symbol s = new Symbol(varIdentifier, lhs.GetVariableType(), value, symbolTable.GetCurrentScope());
                 symbolTable.DeclareSymbol(s);
                 return;
             }
 
             // compute the value of rhs
             value = GetNodeValue(rhs);
-            s = new Symbol(varIdentifier, lhs.GetVariableType(), value, symbolTable.GetCurrentScope());
-            symbolTable.DeclareSymbol(s);
+            Symbol s1 = new Symbol(varIdentifier, lhs.GetVariableType(), value, symbolTable.GetCurrentScope());
+            symbolTable.DeclareSymbol(s1);
         }
 
         /// <summary>
@@ -131,7 +133,7 @@ namespace Interpreter
             for (int i = startValue; i <= endValue; i++)
             {
                 // update variable value in symbol table
-                symbolTable.UpdateSymbol(varNode.GetVariableSymbol(), i + "");
+                symbolTable.UpdateSymbol(varNode.GetVariableSymbol(), i.ToString());
 
                 // check all statements inside for loop
                 foreach (INode statement in forNode.GetStatements())
@@ -152,7 +154,6 @@ namespace Interpreter
             FunctionNode funcNode = (FunctionNode)node;
             INode param = funcNode.GetParameter();
 
-            // multiple different functions...
             if (funcNode.GetFunctionName().Equals("read"))
             {
                 string inputValue = Console.ReadLine();
@@ -166,10 +167,17 @@ namespace Interpreter
                     }
                     catch
                     {
-                        Console.WriteLine("RuntimeError::Cannot convert to int...");
+                        Console.WriteLine($"RuntimeError::Row {param.GetRow()}::Column {param.GetCol()}::Cannot convert input string to int!");
                         errorDetected = true;
                         return;
                     }
+                }
+                else if (varType.Equals("bool"))
+                {
+                    // boolean assingment not allowed in Mini-PL
+                    Console.WriteLine($"RuntimeError::Row {param.GetRow()}::Column {param.GetCol()}::Cannot convert input string to bool!");
+                    errorDetected = true;
+                    return;
                 }
                 symbolTable.UpdateSymbol(varNode.GetVariableSymbol(), inputValue);
             }
