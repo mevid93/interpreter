@@ -16,18 +16,19 @@ namespace Interpreter
         static int Main(string[] args)
         {
             // user must provide path to source code file as input parameter
-            if (args.Length != 0)
+            if (args.Length == 0)
             {
-                Console.WriteLine($"IOError::Please provide path to Mini-PL source file!");
+                Console.WriteLine($"IOError::Please provide a path to Mini-PL source file!");
                 Console.WriteLine("Expected command is: <program.exe> <sourcecode.txt>");
                 return -1;
             }
 
             // check that input source code file exists
-            string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
+            string sourceFilePath = args[0];
+            //string sourceFilePath = "C:\\Users\\Marski\\Desktop\\code1.txt";
             if (!File.Exists(sourceFilePath))
             {
-                Console.WriteLine($"IOError::Invalid sourcecode file. File not found!");
+                Console.WriteLine($"IOError::Invalid source code file. File not found!");
                 return -1;
             }
 
